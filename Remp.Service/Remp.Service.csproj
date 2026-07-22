@@ -6,4 +6,13 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="10.0.10" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Remp.Common\Remp.Common.csproj" />
+    <ProjectReference Include="..\Remp.Models\Remp.Models.csproj" />
+  </ItemGroup>
+
 </Project>

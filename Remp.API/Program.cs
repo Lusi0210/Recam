@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using Remp.API.Middlewares;
 using Remp.DataAccess.Data;
 using Remp.Models.Entities;
+using Remp.Service.Interfaces;
+using Remp.Service.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +20,8 @@ builder.Services.AddDbContext<RempDbContext>(options =>
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<RempDbContext>()
     .AddDefaultTokenProviders();
+
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 
 var app = builder.Build();
