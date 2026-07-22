@@ -11,4 +11,5 @@ namespace Remp.Service.Interfaces;
 public interface IAuthService
 {
     Task<ApiResponse<string>> RegisterAsync(RegisterDto dto);
+    Task<ApiResponse<string>> LoginAsync(LoginDto dto);
 }

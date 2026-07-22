@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Net.WebSockets;
 using System.Threading.Tasks;
@@ -14,10 +15,12 @@ namespace Remp.Service.Services;
 public class AuthService : IAuthService
 {
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly ITokenService _tokenService;
 
-    public AuthService(UserManager<ApplicationUser> userManager)
+    public AuthService(UserManager<ApplicationUser> userManager,ITokenService tokenService)
     {
         _userManager = userManager;
+        _tokenService = tokenService;
     }
     public async Task<ApiResponse<string>> RegisterAsync (RegisterDto dto)
     {
@@ -48,5 +51,27 @@ public class AuthService : IAuthService
 
 
         return ApiResponse<string>.SuccessResponse(user.Id, "Registration successful");
+    }
+
+    public async Task<ApiResponse<string>> LoginAsync (LoginDto dto)
+    {
+        var existingUser = await _userManager.FindByEmailAsync(dto.UserName);
+        
+        if (existingUser == null )
+        {
+            return ApiResponse<string>.FailureResponse("Invalid email or password");
+        }
+
+        var result = await _userManager.CheckPasswordAsync(existingUser, dto.Password);
+
+        if (!result)
+        {
+            return ApiResponse<string>.FailureResponse("Invalid email or Password!");
+        }
+
+        var roles = await _userManager.GetRolesAsync(existingUser);
+        var token = _tokenService.GenerateToken(existingUser,roles);
+
+        return ApiResponse<string>.SuccessResponse(token,"Login successful!");
     }
 }
