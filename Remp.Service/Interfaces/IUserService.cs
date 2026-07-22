@@ -1,0 +1,13 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Remp.Common;
+using Remp.Service.DTOs;
+
+namespace Remp.Service.Interfaces;
+
+public interface IUserService
+{
+    Task<ApiResponse<List<UserResponseDto>>> GetAllUsersAsync(int pageNumber, int pageSize);
+}

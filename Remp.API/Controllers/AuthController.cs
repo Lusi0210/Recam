@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Remp.Service.DTOs;
 using Remp.Service.Interfaces;
@@ -42,6 +44,18 @@ namespace Remp.API.Controllers
             }
 
             return Ok(result);
+        }
+
+        [Authorize]                      
+        [HttpGet("me")]
+        public IActionResult GetMe()
+        {
+            // 从 token 里读出当前用户信息
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            return Ok(new { userId, email, role });
         }
     }
 }
