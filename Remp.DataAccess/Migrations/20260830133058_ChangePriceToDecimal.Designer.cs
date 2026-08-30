@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Remp.DataAccess.Data;
 
@@ -11,9 +12,11 @@ using Remp.DataAccess.Data;
 namespace Remp.DataAccess.Migrations
 {
     [DbContext(typeof(RempDbContext))]
-    partial class RempDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260830133058_ChangePriceToDecimal")]
+    partial class ChangePriceToDecimal
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

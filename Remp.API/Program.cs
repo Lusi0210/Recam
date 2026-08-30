@@ -6,6 +6,8 @@ using Microsoft.IdentityModel.Tokens;
 using Remp.API.Middlewares;
 using Remp.DataAccess.Data;
 using Remp.Models.Entities;
+using Remp.Repository.Interfaces;
+using Remp.Repository.Repositories;
 using Remp.Service.Interfaces;
 using Remp.Service.Services;
 
@@ -44,6 +46,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IUserService, UserService>();
+
+builder.Services.AddScoped<IListingCaseRepository, ListingCaseRepository>();
+builder.Services.AddScoped<IListingCaseService, ListingCaseService>();
 
 
 var app = builder.Build();

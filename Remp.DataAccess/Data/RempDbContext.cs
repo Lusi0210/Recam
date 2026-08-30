@@ -41,6 +41,9 @@ public class RempDbContext : IdentityDbContext<ApplicationUser>
         modelBuilder.Entity<ListingCase>()
             .Property(l => l.Longitude)
             .HasPrecision(9,6);
+        modelBuilder.Entity<ListingCase>()
+            .Property(l => l.Price)
+            .HasPrecision(18, 2);
     }
 
 }

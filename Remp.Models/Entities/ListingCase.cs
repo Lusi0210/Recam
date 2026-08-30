@@ -10,7 +10,7 @@ public class ListingCase
     public int PostCode { get; set; }
     public decimal Longitude { get; set; }
     public decimal Latitude { get; set; }
-    public double Price { get; set; }
+    public decimal Price { get; set; }
     public int Bedrooms { get; set; }
     public int Bathrooms { get; set; }
     public int Garages { get; set; }

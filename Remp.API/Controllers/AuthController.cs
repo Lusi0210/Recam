@@ -46,16 +46,15 @@ namespace Remp.API.Controllers
             return Ok(result);
         }
 
-        [Authorize]                      
-        [HttpGet("me")]
-        public IActionResult GetMe()
-        {
-            // 从 token 里读出当前用户信息
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var email = User.FindFirst(ClaimTypes.Email)?.Value;
-            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+        // [Authorize]                      
+        // [HttpGet("me")]
+        // public IActionResult GetMe()
+        // {
+        //     var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        //     var email = User.FindFirst(ClaimTypes.Email)?.Value;
+        //     var role = User.FindFirst(ClaimTypes.Role)?.Value;
 
-            return Ok(new { userId, email, role });
-        }
+        //     return Ok(new { userId, email, role });
+        // }
     }
 }
