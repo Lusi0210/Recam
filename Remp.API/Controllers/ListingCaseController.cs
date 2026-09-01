@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Remp.Common;
 using Remp.Service.DTOs;
 using Remp.Service.Interfaces;
 
@@ -25,7 +26,6 @@ namespace Remp.API.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateListingCaseDto dto)
         {
-            // 从 token 读当前用户 id
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             var result = await _service.CreateAsync(dto, userId!);
@@ -35,6 +35,41 @@ namespace Remp.API.Controllers
                 return BadRequest(result);
             }
 
+            return Ok(result);
+        }
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> Get()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            ApiResponse<List<GetAllListingCaseResponseDto>> result;
+            if (role == "PhotographyCompany")
+            {
+                result =await _service.GetByPhotographyCompanyAsync(userId!);
+            }
+            else   // Agent
+            {
+                result = await _service.GetByAgentAsync(userId!);
+            }
+
+            if(!result.Success)
+            {
+                return BadRequest(result);
+            }
+            return Ok(result);
+        }
+
+        [Authorize(Roles="PhotographyCompany")]
+        [HttpPost("add-agent")]
+        public async Task<IActionResult> AddAgentToListingCase([FromBody] AddAgentToListingCaseDto dto)
+        {
+            var result = await _service.AddAgentToListingCaseAsync(dto);
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
             return Ok(result);
         }
     }

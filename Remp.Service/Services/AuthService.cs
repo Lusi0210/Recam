@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using Remp.Common;
 using Remp.Models.Entities;
+using Remp.Repository.Interfaces;
 using Remp.Service.DTOs;
 using Remp.Service.Interfaces;
 
@@ -16,11 +17,13 @@ public class AuthService : IAuthService
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ITokenService _tokenService;
+    private readonly IAgentRepository _agentRepo;
 
-    public AuthService(UserManager<ApplicationUser> userManager,ITokenService tokenService)
+    public AuthService(UserManager<ApplicationUser> userManager,ITokenService tokenService,IAgentRepository agentRepo)
     {
         _userManager = userManager;
         _tokenService = tokenService;
+        _agentRepo = agentRepo;
     }
     public async Task<ApiResponse<string>> RegisterAsync (RegisterDto dto)
     {
@@ -48,6 +51,16 @@ public class AuthService : IAuthService
 
         await _userManager.AddToRoleAsync(user,"Agent");
 
+        var agent = new Agent
+        {
+            Id = user.Id,                    
+            AgentFirstName = dto.Name,  
+            AgentLastName = "",
+            AvatarUrl = "",
+            CompanyName = ""
+        };
+
+        await _agentRepo.CreateAsync(agent);
 
 
         return ApiResponse<string>.SuccessResponse(user.Id, "Registration successful");
