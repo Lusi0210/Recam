@@ -62,6 +62,6 @@ public class ListingCaseRepository : IListingCaseRepository
     public async Task<ListingCase?> GetListingCaseDetailsByIdAsync (int listingCaseId)
     {
         return await _context.ListingCases.Include(x => x.MediaAssets).Include(x => x.AgentListingCases).ThenInclude(alc => alc.Agent).FirstOrDefaultAsync(x=> x.Id == listingCaseId && !x.IsDeleted);
-    }  
+    }
 }
 

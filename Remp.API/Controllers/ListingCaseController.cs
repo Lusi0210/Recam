@@ -108,6 +108,18 @@ namespace Remp.API.Controllers
             }
             return Ok(result);
         }
+        [Authorize(Roles = "PhotographyCompany")]
+        [HttpPatch("{id}/status")]
+        public async Task<IActionResult> ChangeListingCaseStatusAsync([FromRoute] int id)
+        {
+            var result = await _service.ChangeListingCaseStatusAsync(id);
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+            return Ok(result);
+        }
+
 
     }
 }

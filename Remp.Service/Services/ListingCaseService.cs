@@ -216,4 +216,30 @@ public class ListingCaseService : IListingCaseService
 
         return ApiResponse<GetListingCaseDetailsResponseDto>.SuccessResponse(dto, "Get listing case details successfully");
     }
+
+    public async Task<ApiResponse<int>> ChangeListingCaseStatusAsync (int listingCaseId)
+    {
+        var existing = await _repo.GetByIdAsync(listingCaseId);
+        if (existing == null)
+        {
+            return ApiResponse<int>.FailureResponse("The listing case does not exist!");
+        }
+
+        ListcaseStatus? next = existing.ListcaseStatus switch
+        {
+            ListcaseStatus.Created => ListcaseStatus.Pending,
+            ListcaseStatus.Pending => ListcaseStatus.InReview,
+            ListcaseStatus.InReview => ListcaseStatus.Delivered,
+            _ => null
+        };
+
+        if (next == null)
+        {
+            return ApiResponse<int>.FailureResponse("The listing case is already delivered!");
+        }
+        
+        existing.ListcaseStatus = next.Value;
+        await _repo.UpdateListingCaseAsync(existing);
+        return ApiResponse<int>.SuccessResponse(existing.Id, "Change listing case status successfully!");
+    }
 }
