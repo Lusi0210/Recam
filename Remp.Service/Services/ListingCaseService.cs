@@ -166,4 +166,54 @@ public class ListingCaseService : IListingCaseService
            return ApiResponse<int>.FailureResponse("Listing case does not exist!");
         }
     }
+
+    public async Task<ApiResponse<GetListingCaseDetailsResponseDto>> GetListingCaseDetailsById(int listingCaseId)
+    {
+        var listingCase = await _repo.GetListingCaseDetailsByIdAsync(listingCaseId);
+
+        if (listingCase == null)
+        {
+            return ApiResponse<GetListingCaseDetailsResponseDto>.FailureResponse("Listing case does not exits!");
+        }
+
+        var dto = new GetListingCaseDetailsResponseDto
+        {
+            Title=listingCase.Title,
+            Description=listingCase.Description,
+            Street=listingCase.Street,
+            City=listingCase.City,
+            State=listingCase.State,
+            PostCode=listingCase.PostCode,
+            Longitude=listingCase.Longitude,
+            Latitude=listingCase.Latitude,
+            Price=listingCase.Price,
+            Bedrooms=listingCase.Bedrooms,
+            Bathrooms=listingCase.Bathrooms,
+            Garages=listingCase.Garages,
+            FloorArea=listingCase.FloorArea,
+            CreatedAt=listingCase.CreatedAt,
+            PropertyType=listingCase.PropertyType,
+            SaleCategory=listingCase.SaleCategory,
+            ListcaseStatus=listingCase.ListcaseStatus,
+
+            Agents = listingCase.AgentListingCases.Select(alc => new AgentInfoDto{
+                Id = alc.Agent.Id,
+                AgentFirstName = alc.Agent.AgentFirstName,
+                AgentLastName = alc.Agent.AgentLastName,
+                AvatarUrl = alc.Agent.AvatarUrl,
+                CompanyName = alc.Agent.CompanyName
+            
+            }).ToList(),
+
+            MediaAssets = listingCase.MediaAssets.Select(m => new MediaInfoDto
+            {
+                Id = m.Id,
+                MediaUrl = m.MediaUrl,
+                MediaType = m.MediaType
+            }).ToList()
+
+        };
+
+        return ApiResponse<GetListingCaseDetailsResponseDto>.SuccessResponse(dto, "Get listing case details successfully");
+    }
 }

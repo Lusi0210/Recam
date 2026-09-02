@@ -97,5 +97,17 @@ namespace Remp.API.Controllers
             return Ok(result);
         }
 
+        [Authorize]
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetListingCaseDetailsById([FromRoute] int id)
+        {
+            var result =await _service.GetListingCaseDetailsById(id);
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+            return Ok(result);
+        }
+
     }
 }
