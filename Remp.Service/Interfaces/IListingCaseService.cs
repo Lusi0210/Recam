@@ -18,4 +18,5 @@ public interface IListingCaseService
     Task<ApiResponse<int>> DeleteListingCaseAsync (int listingCaseId);
     Task<ApiResponse<GetListingCaseDetailsResponseDto>> GetListingCaseDetailsById(int listingCaseId);
     Task<ApiResponse<int>> ChangeListingCaseStatusAsync (int listingCaseId);
+    Task<ApiResponse<GetCurrentUserInfoResponseDto>> GetCurrentUserInfoAsync(string userId, string role);
 }

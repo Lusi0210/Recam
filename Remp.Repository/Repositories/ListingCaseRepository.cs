@@ -63,5 +63,13 @@ public class ListingCaseRepository : IListingCaseRepository
     {
         return await _context.ListingCases.Include(x => x.MediaAssets).Include(x => x.AgentListingCases).ThenInclude(alc => alc.Agent).FirstOrDefaultAsync(x=> x.Id == listingCaseId && !x.IsDeleted);
     }
+
+    public async Task<List<int>> GetAssignedListingIdsAsync(string userId)
+    {
+        return await _context.AgentListingCases
+            .Where(x => x.AgentId == userId)
+            .Select(x => x.ListingCaseId)
+            .ToListAsync();
+    }
 }
 

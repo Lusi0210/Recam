@@ -120,6 +120,5 @@ namespace Remp.API.Controllers
             return Ok(result);
         }
 
-
     }
 }

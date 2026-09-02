@@ -242,4 +242,18 @@ public class ListingCaseService : IListingCaseService
         await _repo.UpdateListingCaseAsync(existing);
         return ApiResponse<int>.SuccessResponse(existing.Id, "Change listing case status successfully!");
     }
+
+    public async Task<ApiResponse<GetCurrentUserInfoResponseDto>> GetCurrentUserInfoAsync(string userId, string role)
+    {
+        var assignedIds = await _repo.GetAssignedListingIdsAsync(userId);
+
+        var dto = new GetCurrentUserInfoResponseDto
+        {
+            UserId=userId,
+            Role=role,
+            AssignedListingIds=assignedIds
+        };
+
+        return ApiResponse<GetCurrentUserInfoResponseDto>.SuccessResponse(dto,"Get current user information successfully!");
+    }
 }

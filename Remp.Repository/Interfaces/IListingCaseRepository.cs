@@ -16,4 +16,5 @@ public interface IListingCaseRepository
     Task<ListingCase?> GetByIdAsync (int listingCaseId);
     Task<ListingCase> UpdateListingCaseAsync (ListingCase listingCase);
     Task<ListingCase?> GetListingCaseDetailsByIdAsync (int listingCaseId);
+    Task<List<int>> GetAssignedListingIdsAsync(string userId);
 }
