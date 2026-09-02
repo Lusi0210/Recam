@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.VisualBasic;
 using Remp.DataAccess.Data;
 using Remp.Models.Entities;
@@ -56,7 +57,6 @@ public class ListingCaseRepository : IListingCaseRepository
     {
         await _context.SaveChangesAsync();
         return listingCase;     
-    }
-        
+    }    
 }
 

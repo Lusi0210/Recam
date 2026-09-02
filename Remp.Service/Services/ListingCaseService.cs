@@ -151,4 +151,19 @@ public class ListingCaseService : IListingCaseService
             return ApiResponse<int>.FailureResponse("Listing case does not exist!");
         }
     }
+
+    public async Task<ApiResponse<int>> DeleteListingCaseAsync (int listingCaseId)
+    {
+        var existing = await _repo.GetByIdAsync(listingCaseId);
+        if(existing != null)
+        {
+            existing.IsDeleted = true;
+            await _repo.UpdateListingCaseAsync(existing);
+            return ApiResponse<int>.SuccessResponse(listingCaseId, "Listing case deleted successfully");
+        }
+        else
+        {
+           return ApiResponse<int>.FailureResponse("Listing case does not exist!");
+        }
+    }
 }

@@ -85,5 +85,17 @@ namespace Remp.API.Controllers
             return Ok(result);
         }
 
+        [Authorize(Roles = "PhotographyCompany")]
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteListingCase([FromRoute] int id)
+        {
+            var result = await _service.DeleteListingCaseAsync(id);
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+            return Ok(result);
+        }
+
     }
 }

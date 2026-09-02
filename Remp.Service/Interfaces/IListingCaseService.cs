@@ -15,4 +15,5 @@ public interface IListingCaseService
     Task<ApiResponse<List<GetAllListingCaseResponseDto>>> GetByAgentAsync(string agentId);
     Task<ApiResponse<bool>> AddAgentToListingCaseAsync(AddAgentToListingCaseDto dto);
     Task<ApiResponse<int>> UpdateListingCaseAsync (int listingCaseId,UpdateListingCaseDto dto);
+    Task<ApiResponse<int>> DeleteListingCaseAsync (int listingCaseId);
 }
