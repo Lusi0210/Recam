@@ -13,4 +13,6 @@ public interface IListingCaseRepository
     Task<List<ListingCase>> GetByAgentAsync(string agentId);
     Task<AgentListingCase> AddAgentToListingCaseAsync (AgentListingCase agentListingCase);
     Task<bool> IsAgentAssignedAsync (string agentId,int listingCaseId);
+    Task<ListingCase?> GetByIdAsync (int listingCaseId);
+    Task<ListingCase> UpdateListingCaseAsync (ListingCase listingCase);
 }

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using System.Xml;
+using Microsoft.EntityFrameworkCore.Migrations.Operations;
 using Remp.Common;
 using Remp.Models.Entities;
 using Remp.Models.Enums;
@@ -119,5 +121,34 @@ public class ListingCaseService : IListingCaseService
 
         var saved = await _repo.AddAgentToListingCaseAsync(agentListingCase);
         return ApiResponse<bool>.SuccessResponse(true,"Add agent to Listing Case successfully");
+    }
+
+    public async Task<ApiResponse<int>> UpdateListingCaseAsync (int listingCaseId,UpdateListingCaseDto dto)
+    {
+        var exists = await _repo.GetByIdAsync(listingCaseId);
+        if (exists!=null)
+        {
+            exists.Title = dto.Title;
+            exists.Description = dto.Description;
+            exists.Street=dto.Street;
+            exists.City=dto.City;
+            exists.State=dto.State;
+            exists.PostCode=dto.PostCode;
+            exists.Longitude=dto.Longitude;;
+            exists.Latitude=dto.Latitude;
+            exists.Price=dto.Price;
+            exists.Bedrooms=dto.Bedrooms;
+            exists.Bathrooms=dto.Bathrooms;
+            exists.Garages=dto.Garages;
+            exists.FloorArea=dto.FloorArea;
+            exists.PropertyType=dto.PropertyType;
+            exists.SaleCategory=dto.SaleCategory;
+            await _repo.UpdateListingCaseAsync(exists);
+            return ApiResponse<int>.SuccessResponse(listingCaseId, "Listing case updated successfully");
+        }
+        else
+        {
+            return ApiResponse<int>.FailureResponse("Listing case does not exist!");
+        }
     }
 }

@@ -47,4 +47,16 @@ public class ListingCaseRepository : IListingCaseRepository
     {
         return await _context.AgentListingCases.AnyAsync(x => x.AgentId ==agentId && x.ListingCaseId == listingCaseId);
     }
+
+    public async Task<ListingCase?> GetByIdAsync (int listingCaseId)
+    {
+        return  await _context.ListingCases.FirstOrDefaultAsync(x => x.Id ==listingCaseId && !x.IsDeleted);
+    }
+    public async Task<ListingCase> UpdateListingCaseAsync (ListingCase listingCase)
+    {
+        await _context.SaveChangesAsync();
+        return listingCase;     
+    }
+        
 }
+

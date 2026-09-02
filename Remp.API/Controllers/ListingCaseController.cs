@@ -72,5 +72,18 @@ namespace Remp.API.Controllers
             }
             return Ok(result);
         }
+
+        [Authorize(Roles = "PhotographyCompany")]
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateListingCase([FromRoute] int id, [FromBody] UpdateListingCaseDto dto)
+        {
+            var result = await _service.UpdateListingCaseAsync(id,dto);
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+            return Ok(result);
+        }
+
     }
 }
