@@ -52,15 +52,11 @@ builder.Services.AddScoped<IListingCaseService, ListingCaseService>();
 
 builder.Services.AddScoped<IAgentRepository, AgentRepository>();
 
+builder.Services.AddScoped<ICaseContactService, CaseContactService>();
+builder.Services.AddScoped<ICaseContactRepository, CaseContactRepository>();
+
 
 var app = builder.Build();
-
-using (var scope = app.Services.CreateScope())
-{
-    var roleManager = scope.ServiceProvider
-        .GetRequiredService<RoleManager<IdentityRole>>();
-    await DataSeeder.SeedRolesAsync(roleManager);
-}
 
 using (var scope = app.Services.CreateScope())
 {
@@ -70,7 +66,7 @@ using (var scope = app.Services.CreateScope())
     await DataSeeder.SeedRolesAsync(roleManager);
 
     var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-    await DataSeeder.SeedPhotographyCompanyAsync(userManager);   // ← 这行加了吗?
+    await DataSeeder.SeedPhotographyCompanyAsync(userManager);
 }
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
