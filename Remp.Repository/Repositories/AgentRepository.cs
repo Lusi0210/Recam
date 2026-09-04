@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using Remp.DataAccess.Data;
 using Remp.Models.Entities;
 using Remp.Repository.Interfaces;
@@ -22,5 +23,10 @@ public class AgentRepository : IAgentRepository
         _context.Agents.Add(agent);
         await _context.SaveChangesAsync();
         return agent;
+    }
+
+    public async Task<Agent?> SearchAgentByIdAsync(string id)
+    {
+        return await _context.Agents.FirstOrDefaultAsync(x=> x.Id==id);
     }
 }

@@ -10,4 +10,5 @@ namespace Remp.Repository.Interfaces;
 public interface IAgentRepository
 {
     Task<Agent> CreateAsync(Agent agent);
+    Task<Agent?> SearchAgentByIdAsync(string id);
 }

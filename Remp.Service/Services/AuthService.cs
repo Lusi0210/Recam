@@ -147,8 +147,6 @@ public class AuthService : IAuthService
         await _agentRepo.CreateAsync(agent);
 
         Console.WriteLine($"[Email to {dto.Email}] Login info -> Email: {dto.Email}, Password: {password}");
-
-         return ApiResponse<string>.SuccessResponse(user.Id, "Agent created successfully. Login info sent to email.");
-
+        return ApiResponse<string>.SuccessResponse(user.Id, "Agent created successfully. Login info sent to email.");
     }
 }

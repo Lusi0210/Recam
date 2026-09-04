@@ -1,0 +1,15 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace Remp.Service.DTOs;
+
+public class SearchAgentByEmailResponseDto
+{
+    public string Id {get; set;} = null!;
+    public string AgentFirstName {get; set;} = null!;
+    public string AgentLastName {get; set;} = null!;
+    public string AvatarUrl {get; set;} = null!;
+    public string CompanyName {get; set;} = null!;
+}
