@@ -87,4 +87,68 @@ public class AuthService : IAuthService
 
         return ApiResponse<string>.SuccessResponse(token,"Login successful!");
     }
+
+
+    private string GenerateRandomPassword()
+    {
+        const string upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+        const string lower = "abcdefghijkmnopqrstuvwxyz";
+        const string digits = "23456789";
+        const string special = "!@#$%";
+        var random = new Random();
+
+        var password =
+            upper[random.Next(upper.Length)].ToString() +
+            lower[random.Next(lower.Length)] +
+            digits[random.Next(digits.Length)] +
+            special[random.Next(special.Length)] +
+            new string(Enumerable.Range(0, 8)
+                .Select(_ => (upper + lower + digits)[random.Next((upper + lower + digits).Length)])
+                .ToArray());
+
+        return password;
+    }
+
+    public async Task<ApiResponse<string>> CreateAgentAsync(CreateAgentDto dto)
+    {
+        var existingUser = await _userManager.FindByEmailAsync(dto.Email);
+        if (existingUser != null)
+        {
+            return ApiResponse<string>.FailureResponse("Email is already registered");
+        }
+        
+        var password = GenerateRandomPassword();
+
+        var user = new ApplicationUser
+        {
+            UserName = dto.Email,
+            Email = dto.Email,
+            IsDeleted = false,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var result = await _userManager.CreateAsync(user, password);
+        if (!result.Succeeded)
+        {
+            var errors = result.Errors.Select(e => e.Description).ToList();
+            return ApiResponse<string>.FailureResponse("Create agent failed", errors);
+        }
+
+        await _userManager.AddToRoleAsync(user, "Agent");
+
+        var agent = new Agent
+        {
+            Id = user.Id,
+            AgentFirstName = dto.Name,
+            AgentLastName = "",
+            AvatarUrl = "",
+            CompanyName = ""
+        };
+        await _agentRepo.CreateAsync(agent);
+
+        Console.WriteLine($"[Email to {dto.Email}] Login info -> Email: {dto.Email}, Password: {password}");
+
+         return ApiResponse<string>.SuccessResponse(user.Id, "Agent created successfully. Login info sent to email.");
+
+    }
 }

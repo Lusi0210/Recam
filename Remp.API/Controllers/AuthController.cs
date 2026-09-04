@@ -56,5 +56,18 @@ namespace Remp.API.Controllers
 
         //     return Ok(new { userId, email, role });
         // }
+
+
+        [Authorize(Roles = "PhotographyCompany")]   // 只有 company 能创建 agent
+        [HttpPost("create-agent")]
+        public async Task<IActionResult> CreateAgent([FromBody] CreateAgentDto dto)
+        {
+            var result = await _authService.CreateAgentAsync(dto);
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+            return Ok(result);
+        }
     }
 }

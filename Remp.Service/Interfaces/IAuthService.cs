@@ -12,4 +12,5 @@ public interface IAuthService
 {
     Task<ApiResponse<string>> RegisterAsync(RegisterDto dto);
     Task<ApiResponse<string>> LoginAsync(LoginDto dto);
+    Task<ApiResponse<string>> CreateAgentAsync(CreateAgentDto dto);
 }
