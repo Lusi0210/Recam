@@ -55,6 +55,9 @@ builder.Services.AddScoped<IAgentRepository, AgentRepository>();
 builder.Services.AddScoped<ICaseContactService, CaseContactService>();
 builder.Services.AddScoped<ICaseContactRepository, CaseContactRepository>();
 
+builder.Services.AddScoped<IAgentPhotographyCompanyService, AgentPhotographyCompanyService>();
+builder.Services.AddScoped<IAgentPhotographyCompanyRepository, AgentPhotographyCompanyRepository>();
+
 
 var app = builder.Build();
 
