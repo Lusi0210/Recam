@@ -36,4 +36,20 @@ public class AgentPhotographyCompanyService : IAgentPhotographyCompanyService
         return ApiResponse<bool>.SuccessResponse(true,"Add agent to photography company successfully!");
     }
 
+    public async Task<ApiResponse<List<AgentListItemResponseDto>>> GetAgentByPhotographyCompanyAsync(string photographyCompanyId)
+    {
+        var agents = await _repo.GetAgentByPhotographyCompanyAsync(photographyCompanyId);
+
+        var dtos = agents.Select(a => new AgentListItemResponseDto
+        {
+            Id = a.Id,
+            AgentFirstName = a.AgentFirstName,
+            AgentLastName = a.AgentLastName,
+            AvatarUrl = a.AvatarUrl,
+            CompanyName = a.CompanyName
+        }).ToList();
+
+        return ApiResponse<List<AgentListItemResponseDto>>.SuccessResponse(dtos, "Get agents under this company successfully!");
+    }
+
 }

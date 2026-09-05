@@ -29,4 +29,11 @@ public class AgentPhotographyCompanyRepository : IAgentPhotographyCompanyReposit
         return await _rempDbContext.AgentPhotographyCompanies
         .AnyAsync(x => x.AgentId == agentId && x.PhotographyCompanyId == photographyCompanyId);
     }
+
+    public async Task<List<Agent>> GetAgentByPhotographyCompanyAsync(string photographyCompanyId)
+    {
+        List<string> agentIds = await _rempDbContext.AgentPhotographyCompanies.Where(x => x.PhotographyCompanyId == photographyCompanyId).Select(x => x.AgentId).ToListAsync();
+        List<Agent> result = await _rempDbContext.Agents.Where(x => agentIds.Contains(x.Id)).ToListAsync();
+        return result;
+    }
 }

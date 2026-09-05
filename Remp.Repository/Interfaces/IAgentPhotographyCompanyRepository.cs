@@ -10,4 +10,5 @@ public interface IAgentPhotographyCompanyRepository
 {
     Task<AgentPhotographyCompany> AddAgentToPhotographyCompanyAsync(AgentPhotographyCompany agentPhotographyCompany);
     Task<bool> CheckAgentinPhotographyCompany(string agentId,string photographyCompanyId);
+    Task<List<Agent>> GetAgentByPhotographyCompanyAsync(string photographyCompanyId); 
 }

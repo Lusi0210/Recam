@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -30,6 +31,21 @@ namespace Remp.API.Controllers
             }
             return Ok(result);
         }
+
+        [Authorize(Roles = "PhotographyCompany")]
+        [HttpGet]
+        public async Task<IActionResult> GetAgentsByPhotographyCompany()
+        {
+            var companyId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _service.GetAgentByPhotographyCompanyAsync(companyId!);
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
+
 
     }
 }
