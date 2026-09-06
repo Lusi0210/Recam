@@ -17,6 +17,7 @@ public class ListingCase
     public double FloorArea { get; set; }
     public DateTime CreatedAt { get; set; }
     public Boolean IsDeleted { get; set; }
+    public string? ShareableUrl { get; set; }
     public Enums.PropertyType PropertyType {get; set;}
     public Enums.SaleCategory SaleCategory {get;set;}
     public Enums.ListcaseStatus ListcaseStatus {get;set;}

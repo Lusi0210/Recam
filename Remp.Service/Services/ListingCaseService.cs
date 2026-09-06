@@ -256,4 +256,16 @@ public class ListingCaseService : IListingCaseService
 
         return ApiResponse<GetCurrentUserInfoResponseDto>.SuccessResponse(dto,"Get current user information successfully!");
     }
+
+    public async Task<ApiResponse<string>> GenerateShareableLinkAsync(int listingCaseId)
+    {
+        var existing = await _repo.GetByIdAsync(listingCaseId);
+        if (existing == null)
+        {
+            return ApiResponse<string>.FailureResponse("Listing case does not exist!");
+        }
+        existing.ShareableUrl = $"https://recam.com/share/{Guid.NewGuid()}";
+        await _repo.UpdateListingCaseAsync(existing);
+        return ApiResponse<string>.SuccessResponse(existing.ShareableUrl, "Listing case published successfully!");
+    }
 }

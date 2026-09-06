@@ -120,5 +120,15 @@ namespace Remp.API.Controllers
             return Ok(result);
         }
 
+        [Authorize(Roles = "PhotographyCompany")]
+        [HttpPatch("{id}/publish")]
+        public async Task<IActionResult> Publish([FromRoute] int id)
+        {
+            var result = await _service.GenerateShareableLinkAsync(id);
+            if (!result.Success) return BadRequest(result);
+            return Ok(result);
+        }
+
+
     }
 }

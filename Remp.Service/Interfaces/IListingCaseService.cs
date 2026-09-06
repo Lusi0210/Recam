@@ -19,4 +19,5 @@ public interface IListingCaseService
     Task<ApiResponse<GetListingCaseDetailsResponseDto>> GetListingCaseDetailsById(int listingCaseId);
     Task<ApiResponse<int>> ChangeListingCaseStatusAsync (int listingCaseId);
     Task<ApiResponse<GetCurrentUserInfoResponseDto>> GetCurrentUserInfoAsync(string userId, string role);
+    Task<ApiResponse<string>> GenerateShareableLinkAsync(int listingCaseId);
 }
