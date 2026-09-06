@@ -20,7 +20,7 @@ namespace Remp.API.Controllers
             _service=service;
         }
 
-        [Authorize(Roles = "PhotographyCompany")]
+        [Authorize(Roles = "Agent,PhotographyCompany")]
         [HttpPost]
         public async Task<IActionResult> CreateCaseContact([FromBody] CreateCaseContactDto dto)
         {
