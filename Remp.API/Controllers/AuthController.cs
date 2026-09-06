@@ -69,5 +69,20 @@ namespace Remp.API.Controllers
             }
             return Ok(result);
         }
+
+        [Authorize]
+        [HttpPatch]
+        public async Task<IActionResult> UpadtePasswordAsync([FromBody] UpdateAccountPasswordDto dto)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _authService.UpdatePasswordAsync(userId!,dto);
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+            return Ok(result);
+        }
+
+
     }
 }

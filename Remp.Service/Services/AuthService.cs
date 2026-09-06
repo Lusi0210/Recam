@@ -149,4 +149,21 @@ public class AuthService : IAuthService
         Console.WriteLine($"[Email to {dto.Email}] Login info -> Email: {dto.Email}, Password: {password}");
         return ApiResponse<string>.SuccessResponse(user.Id, "Agent created successfully. Login info sent to email.");
     }
+    
+    public async Task<ApiResponse<string>> UpdatePasswordAsync(string userId ,UpdateAccountPasswordDto dto)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null)
+        {
+            return ApiResponse<string>.FailureResponse("The user does not exits!");
+        }
+        var result = await _userManager.ChangePasswordAsync(user,dto.CurrentPassword,dto.NewPassword);
+        if (!result.Succeeded)
+        {
+            var errors = result.Errors.Select(e => e.Description).ToList();
+            return ApiResponse<string>.FailureResponse("Change password failed!",errors);
+        }
+        return ApiResponse<string>.SuccessResponse(user.Id,"Update Password Successfully!");
+
+    }
 }
