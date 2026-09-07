@@ -10,6 +10,7 @@ using Remp.Repository.Interfaces;
 using Remp.Repository.Repositories;
 using Remp.Service.Interfaces;
 using Remp.Service.Services;
+using Remp.Common;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,7 +60,7 @@ builder.Services.AddScoped<ICaseContactRepository, CaseContactRepository>();
 builder.Services.AddScoped<IAgentPhotographyCompanyService, AgentPhotographyCompanyService>();
 builder.Services.AddScoped<IAgentPhotographyCompanyRepository, AgentPhotographyCompanyRepository>();
 
-
+builder.Services.Configure<BlobSettings>(builder.Configuration.GetSection("BlobStorage"));
 
 
 var app = builder.Build();
