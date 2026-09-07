@@ -71,4 +71,22 @@ public class MediaAssetsService : IMediaAssetsService
 
     }
 
+    public async Task<DownloadFileResponseDto?> DownloadMediaAssetAsync(int id)
+    {
+        var media = await _mediaAssetRepo.GetByIdAsync(id);
+        if(media == null)
+        {
+            return null;
+        }
+        
+        var (content,contentType,blobName) = await _blobStorage.DownloadFileAsync(media.MediaUrl);
+        
+        return new DownloadFileResponseDto
+        {
+            Content = content,
+            ContentType=contentType,
+            FileName = blobName
+        };
+    }
+
 }

@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Remp.Common;
 using Remp.Service.DTOs;
 using Remp.Service.Interfaces;
 
@@ -32,5 +33,18 @@ namespace Remp.API.Controllers
             }
             return Ok(result);
         }
+
+        [Authorize]
+        [HttpGet("download/{id}")]
+        public async Task<IActionResult> DownloadMediaAsset(int id)
+        {
+            var result = await _service.DownloadMediaAssetAsync(id);
+            if (result == null)
+            {
+                return NotFound(ApiResponse<string>.FailureResponse("Media file not found."));
+            }
+            return File(result.Content, result.ContentType, result.FileName);
+        }
+
     }
 }

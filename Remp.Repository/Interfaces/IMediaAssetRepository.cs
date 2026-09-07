@@ -9,4 +9,5 @@ namespace Remp.Repository.Interfaces;
 public interface IMediaAssetRepository
 {
     Task<List<MediaAsset>> AddRangeAsync(List<MediaAsset> mediaAssets);
+    Task<MediaAsset?> GetByIdAsync(int id);
 }

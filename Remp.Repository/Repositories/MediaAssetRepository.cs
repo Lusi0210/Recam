@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using Remp.DataAccess.Data;
 using Remp.Models.Entities;
 using Remp.Repository.Interfaces;
@@ -21,6 +22,11 @@ namespace Remp.Repository.Repositories
             await _context.MediaAssets.AddRangeAsync(mediaAssets);
             await _context.SaveChangesAsync();
             return mediaAssets;
+        }
+
+        public async Task<MediaAsset?> GetByIdAsync(int id)
+        {
+            return await _context.MediaAssets.FirstOrDefaultAsync(m => m.Id == id && !m.IsDeleted);
         }
     }
 }

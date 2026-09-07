@@ -10,4 +10,5 @@ namespace Remp.Service.Interfaces;
 public interface IMediaAssetsService
 {
     Task<ApiResponse<List<UploadMediaAssetsResponseDto>>> UploadMediaAssetAsync (UploadMediaAssetsDto dto, string userId);
+    Task<DownloadFileResponseDto?> DownloadMediaAssetAsync(int id);
 }
