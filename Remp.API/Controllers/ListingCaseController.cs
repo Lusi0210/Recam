@@ -16,10 +16,12 @@ namespace Remp.API.Controllers
     public class ListingCaseController : ControllerBase
     {
         private readonly IListingCaseService _service;
+        private readonly IMediaAssetsService _mediaAssetsService;
 
-        public ListingCaseController(IListingCaseService service)
+        public ListingCaseController(IListingCaseService service,IMediaAssetsService mediaAssetsService)
         {
             _service = service;
+            _mediaAssetsService=mediaAssetsService;
         }
 
         [Authorize(Roles = "PhotographyCompany")]
@@ -129,6 +131,17 @@ namespace Remp.API.Controllers
             return Ok(result);
         }
 
+        [Authorize]
+        [HttpGet("{id}/download")]
+        public async Task<IActionResult> DownloadListingCaseAsZip(int id)
+        {
+            var result = await _mediaAssetsService.DownloadListingCaseAsZipAsync(id);
+            if (result == null)
+            {
+                return NotFound(ApiResponse<string>.FailureResponse("No media files found for this listing case."));
+            }
+            return File(result.Content, result.ContentType, result.FileName); 
+        }
 
     }
 }

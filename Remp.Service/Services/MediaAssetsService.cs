@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
 using Remp.Common;
@@ -88,5 +89,45 @@ public class MediaAssetsService : IMediaAssetsService
             FileName = blobName
         };
     }
+
+    public async Task<DownloadFileResponseDto?> DownloadListingCaseAsZipAsync(int listingCaseId)
+    {
+        var listingCase = await _listingCaseRepo.GetByIdAsync(listingCaseId);
+        if (listingCase == null)
+        {
+            return null;
+        }
+
+        var mediaAssets = await _mediaAssetRepo.GetByListingCaseIdAsync(listingCaseId);
+        if(mediaAssets.Count == 0)
+        {
+            return null;
+        }
+
+        var zipStream = new MemoryStream();
+        using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create, leaveOpen: true))
+        {
+            foreach (var media in mediaAssets)
+            {
+                var (content,_,blobName) = await _blobStorage.DownloadFileAsync(media.MediaUrl);
+
+                var entry = archive.CreateEntry(blobName,CompressionLevel.Optimal);
+                await using var entryStream = entry.Open();
+                await content.CopyToAsync(entryStream);
+                await content.DisposeAsync();
+            }
+        }
+
+        zipStream.Position=0;
+
+        var zipFileName=$"{listingCase.Title}.zip";
+        return new DownloadFileResponseDto
+        {
+            Content = zipStream,
+            ContentType = "application/zip",
+            FileName=zipFileName
+        };
+    }
+
 
 }
