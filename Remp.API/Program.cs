@@ -62,6 +62,10 @@ builder.Services.AddScoped<IAgentPhotographyCompanyRepository, AgentPhotographyC
 
 builder.Services.Configure<BlobSettings>(builder.Configuration.GetSection("BlobStorage"));
 
+builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
+builder.Services.AddScoped<IMediaAssetRepository, MediaAssetRepository>();
+builder.Services.AddScoped<IMediaAssetsService, MediaAssetsService>();
+
 
 var app = builder.Build();
 

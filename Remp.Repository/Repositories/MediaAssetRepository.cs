@@ -1,0 +1,26 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Remp.DataAccess.Data;
+using Remp.Models.Entities;
+using Remp.Repository.Interfaces;
+
+namespace Remp.Repository.Repositories
+{
+    public class MediaAssetRepository : IMediaAssetRepository
+    {
+        private readonly RempDbContext _context;
+        public MediaAssetRepository(RempDbContext context)
+        {
+            _context=context;
+        }
+
+        public async Task<List<MediaAsset>> AddRangeAsync(List<MediaAsset> mediaAssets)
+        {
+            await _context.MediaAssets.AddRangeAsync(mediaAssets);
+            await _context.SaveChangesAsync();
+            return mediaAssets;
+        }
+    }
+}
