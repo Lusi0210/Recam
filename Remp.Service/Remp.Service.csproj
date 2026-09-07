@@ -7,6 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.29.2" />
+    <PackageReference Include="Azure.Storage.Blobs.Batch" Version="12.26.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
     <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="10.0.10" />
     <PackageReference Include="Microsoft.IdentityModel.Protocols" Version="8.20.0" />
