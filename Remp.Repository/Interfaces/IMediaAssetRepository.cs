@@ -11,4 +11,5 @@ public interface IMediaAssetRepository
     Task<List<MediaAsset>> AddRangeAsync(List<MediaAsset> mediaAssets);
     Task<MediaAsset?> GetByIdAsync(int id);
     Task<List<MediaAsset>> GetByListingCaseIdAsync(int listingCaseId);
+    Task<MediaAsset> UpdateByIdAsync(MediaAsset mediaAsset);
 }

@@ -46,5 +46,17 @@ namespace Remp.API.Controllers
             return File(result.Content, result.ContentType, result.FileName);
         }
 
+        [Authorize(Roles = "PhotographyCompany")]
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteMediaAsset([FromRoute]int id)
+        {
+            var result = await _service.DeleteMediaAssetByIdAsync(id);
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+            return Ok(result);
+        }
+
     }
 }

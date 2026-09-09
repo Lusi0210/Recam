@@ -33,5 +33,11 @@ namespace Remp.Repository.Repositories
         {
             return await _context.MediaAssets.Where(m => m.ListingCaseId == listingCaseId && !m.IsDeleted).ToListAsync();
         }
+
+        public async Task<MediaAsset> UpdateByIdAsync(MediaAsset mediaAsset)
+        {
+            await _context.SaveChangesAsync();
+            return mediaAsset;
+        }
     }
 }

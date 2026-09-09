@@ -157,4 +157,17 @@ public class MediaAssetsService : IMediaAssetsService
 
         return ApiResponse<List<MediaAssetsByTypeDto>>.SuccessResponse(grouped,"Media assets retrieved successfully.");
     }
+
+    public async Task<ApiResponse<int>> DeleteMediaAssetByIdAsync(int id)
+    {
+        var media = await _mediaAssetRepo.GetByIdAsync(id);
+        if (media == null)
+        {
+            return ApiResponse<int>.FailureResponse("The media asset does not exits!");
+        }
+
+        media.IsDeleted = true;
+        await _mediaAssetRepo.UpdateByIdAsync(media);
+        return ApiResponse<int>.SuccessResponse(id,"Delete the media asset successfully!");
+    }
 }
