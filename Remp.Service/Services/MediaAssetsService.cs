@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Remp.Common;
 using Remp.Models.Entities;
+using Remp.Models.Enums;
 using Remp.Repository.Interfaces;
 using Remp.Service.DTOs;
 using Remp.Service.Interfaces;
@@ -169,5 +170,35 @@ public class MediaAssetsService : IMediaAssetsService
         media.IsDeleted = true;
         await _mediaAssetRepo.UpdateByIdAsync(media);
         return ApiResponse<int>.SuccessResponse(id,"Delete the media asset successfully!");
+    }
+
+    public async Task<ApiResponse<int>> SetHeroByIdAsync(int listingCaseId,SetHeroByIdDto dto)
+    {
+        var media = await _mediaAssetRepo.GetByListingCaseIdAsync(listingCaseId);
+        if (media == null || media.Count == 0)
+        {
+            return ApiResponse<int>.FailureResponse("This listing case does not have any media asset!");
+        }
+
+        var target = media.FirstOrDefault(m => m.Id == dto.MediaAssetId);
+        if (target == null)
+        {
+            return ApiResponse<int>.FailureResponse("This media asset is not in this listing case!");
+        }
+
+        if (target.IsHero)
+        {
+            return ApiResponse<int>.FailureResponse("The media asset is already hero.");
+        }
+
+        foreach (var item in media)
+        {
+            item.IsHero = false;
+        }
+        target.IsHero = true;
+
+        await _mediaAssetRepo.SaveChangesAsync();
+
+        return ApiResponse<int>.SuccessResponse(dto.MediaAssetId, "The media asset is set as hero successfully.");
     }
 }

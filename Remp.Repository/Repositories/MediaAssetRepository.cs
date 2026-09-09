@@ -39,5 +39,10 @@ namespace Remp.Repository.Repositories
             await _context.SaveChangesAsync();
             return mediaAsset;
         }
+
+        public async Task SaveChangesAsync()
+        {
+            await _context.SaveChangesAsync();
+        }
     }
 }

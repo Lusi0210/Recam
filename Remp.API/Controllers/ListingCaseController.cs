@@ -155,5 +155,18 @@ namespace Remp.API.Controllers
             return Ok(result);
         }
 
+        [Authorize(Roles = "PhotographyCompany,Agent")]
+        [HttpPut("{id}/cover-image")]
+        public async Task<IActionResult> SetHeroById([FromRoute] int id,  SetHeroByIdDto dto)
+        {
+            var result = await _mediaAssetsService.SetHeroByIdAsync(id,dto);
+            if (!result.Success)
+            {
+                return NotFound(result);
+            }
+            return Ok(result);
+        }
+
+
     }
 }
