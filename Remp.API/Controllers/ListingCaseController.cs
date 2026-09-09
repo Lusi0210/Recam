@@ -143,5 +143,17 @@ namespace Remp.API.Controllers
             return File(result.Content, result.ContentType, result.FileName); 
         }
 
+        [Authorize(Roles = "PhotographyCompany,Agent")]
+        [HttpGet("{id}/media")]
+        public async Task<IActionResult> GetMediaAssets(int id)
+        {
+            var result = await _mediaAssetsService.GetMediaAssetsByListingCaseAsync(id);
+            if (!result.Success)
+            {
+                return NotFound(result);
+            }
+            return Ok(result);
+        }
+
     }
 }

@@ -129,5 +129,32 @@ public class MediaAssetsService : IMediaAssetsService
         };
     }
 
+    public async Task<ApiResponse<List<MediaAssetsByTypeDto>>> GetMediaAssetsByListingCaseAsync(int listingCaseId)
+    {
+        var existing  = await _listingCaseRepo.GetByIdAsync(listingCaseId);
+        if (existing == null)
+        {
+            return ApiResponse<List<MediaAssetsByTypeDto>>.FailureResponse("The listing case does not exits!");
+        }
 
+        var mediaAssets = await _mediaAssetRepo.GetByListingCaseIdAsync(listingCaseId);
+
+        var grouped = mediaAssets
+            .GroupBy(m => m.MediaType)
+            .Select(g => new MediaAssetsByTypeDto
+            {
+                MediaType = g.Key,
+                Items = g.Select(m => new MediaAssetItemDto
+                {
+                    Id = m.Id,
+                    MediaUrl = m.MediaUrl,
+                    IsSelect = m.IsSelect,
+                    IsHero = m.IsHero,
+                    UploadedAt = m.UploadedAt
+                }).ToList()
+            })
+            .ToList();
+
+        return ApiResponse<List<MediaAssetsByTypeDto>>.SuccessResponse(grouped,"Media assets retrieved successfully.");
+    }
 }

@@ -12,4 +12,5 @@ public interface IMediaAssetsService
     Task<ApiResponse<List<UploadMediaAssetsResponseDto>>> UploadMediaAssetAsync (UploadMediaAssetsDto dto, string userId);
     Task<DownloadFileResponseDto?> DownloadMediaAssetAsync(int id);
     Task<DownloadFileResponseDto?> DownloadListingCaseAsZipAsync(int listingCaseId);
+    Task<ApiResponse<List<MediaAssetsByTypeDto>>> GetMediaAssetsByListingCaseAsync(int listingCaseId);
 }
