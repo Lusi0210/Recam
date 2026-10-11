@@ -4,7 +4,7 @@ namespace Remp.Common.Exceptions;
 
 public class BadRequestException : AppException
 {
-    public BadRequestException(string message) : base(message, 400)
+    public BadRequestException(string message, List<string>? errors = null) : base(message, 400,errors)
     {
     
     }

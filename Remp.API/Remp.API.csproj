@@ -1,9 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>f6f511cf-864a-4820-a385-2e2f7a9b1621</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,6 +24,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Remp.Common\Remp.Common.csproj" />
     <ProjectReference Include="..\Remp.DataAccess\Remp.DataAccess.csproj" />
+    <ProjectReference Include="..\Remp.Service\Remp.Service.csproj" />
   </ItemGroup>
 
 </Project>

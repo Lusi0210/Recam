@@ -1,8 +1,16 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Remp.API.Middlewares;
+using Remp.Common.Settings;
+using Remp.DataAccess.Collections;
 using Remp.DataAccess.Data;
 using Remp.Models.Entities;
+using Remp.Repository.Interfaces;
+using Remp.Repository.Repositories;
+using Remp.Service.Interfaces;
+using Remp.Service.Mappers;
+using Remp.Service.Services;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,7 +33,20 @@ Log.Logger = new LoggerConfiguration()
     .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day)
     .CreateLogger();
 
+builder.Services.AddAutoMapper(cfg => { }, typeof(MappingProfile));
+builder.Services.AddValidatorsFromAssembly(typeof(MappingProfile).Assembly);
+
+
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+
 builder.Host.UseSerilog();
+
+builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDbSettings"));
+builder.Services.AddSingleton<MongoDbContext>();
+
+builder.Services.AddScoped<IUserActivityLogRepository, UserActivityLogRepository>();
 
 var app = builder.Build();
 
