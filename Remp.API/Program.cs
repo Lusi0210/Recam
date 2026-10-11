@@ -6,6 +6,7 @@ using Remp.Common.Settings;
 using Remp.DataAccess.Collections;
 using Remp.DataAccess.Data;
 using Remp.Models.Entities;
+using Remp.Repository.Common;
 using Remp.Repository.Interfaces;
 using Remp.Repository.Repositories;
 using Remp.Service.Interfaces;
@@ -47,6 +48,9 @@ builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("Mo
 builder.Services.AddSingleton<MongoDbContext>();
 
 builder.Services.AddScoped<IUserActivityLogRepository, UserActivityLogRepository>();
+
+builder.Services.AddScoped<IAgentRepository, AgentRepository>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 var app = builder.Build();
 

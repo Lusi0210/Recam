@@ -10,6 +10,8 @@ using Microsoft.Extensions.Logging;
 using Remp.Repository.Interfaces;
 using Remp.Models.Documents;
 using Remp.Models.Enums;
+using Remp.Repository.Common;
+using Remp.Models.Constants;
 
 
 namespace Remp.Service.Services;
@@ -18,25 +20,31 @@ public class AuthService : IAuthService
 {
     private readonly UserManager<User> _userManager;
     private readonly ITokenService _tokenService;
-    private readonly IValidator<LoginRequestDto> _validator;
+    private readonly IValidator<LoginRequestDto> _loginRequestValidator;
+    private readonly IValidator<RegisterRequestDto> _registerRequestValidator;
     private readonly IUserActivityLogRepository _activityLogRepository;
     private readonly ILogger<AuthService> _logger;
-    public AuthService(UserManager<User> userManager,ITokenService tokenService,IValidator<LoginRequestDto> validator,IUserActivityLogRepository activityLogRepository,ILogger<AuthService> logger)
+    private readonly IAgentRepository _agentRepository;
+    private readonly IUnitOfWork _unitOfWork;
+    public AuthService(UserManager<User> userManager,ITokenService tokenService,IValidator<LoginRequestDto> loginRequestValidator,IValidator<RegisterRequestDto> registerRequestValidator,IUserActivityLogRepository activityLogRepository,ILogger<AuthService> logger,IAgentRepository agentRepository,IUnitOfWork unitOfWork)
     {
         _userManager = userManager;
         _tokenService = tokenService;
-        _validator = validator;
+        _loginRequestValidator = loginRequestValidator;
+        _registerRequestValidator = registerRequestValidator;
         _activityLogRepository = activityLogRepository;
         _logger = logger;
+        _agentRepository = agentRepository;
+        _unitOfWork = unitOfWork;
     }
 
-    private async Task LogLoginAsync(string email, string? userId, bool success, string message, string? ipAddress)
+    private async Task LogActivityAsync(UserActivityType action,string email, string? userId, bool success, string message, string? ipAddress)
     {
         UserActivityLog log = new UserActivityLog
         {
             UserId = userId,
             Email = email,
-            Action = UserActivityType.Login,
+            Action = action,
             Success = success,
             Message = message,
             IpAddress = ipAddress,
@@ -55,7 +63,7 @@ public class AuthService : IAuthService
 
     public async Task<LoginResponseDto> LoginAsync(LoginRequestDto dto,string? ipAddress)
     {
-        ValidationResult validationResult = await _validator.ValidateAsync(dto);
+        ValidationResult validationResult = await _loginRequestValidator.ValidateAsync(dto);
         if (!validationResult.IsValid)
         {
             List<string> errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
@@ -65,20 +73,20 @@ public class AuthService : IAuthService
         User? user = await _userManager.FindByEmailAsync(dto.Email);
         if (user == null)
         {
-            await LogLoginAsync(dto.Email, null, false, "User not found", ipAddress);
+            await LogActivityAsync(UserActivityType.Login,dto.Email, null, false, "User not found", ipAddress);
             throw new UnauthorizedException("Invalid email or password");
         }
 
         if (user.IsDeleted)
         {
-            await LogLoginAsync(dto.Email, user.Id, false, "User is deleted", ipAddress);
+            await LogActivityAsync(UserActivityType.Login,dto.Email, user.Id, false, "User is deleted", ipAddress);
             throw new UnauthorizedException("Invalid email or password");
         }
 
         bool passwordIsCorrect = await _userManager.CheckPasswordAsync(user,dto.Password);
         if (!passwordIsCorrect)
         {
-            await LogLoginAsync(dto.Email, user.Id, false, "Wrong password", ipAddress);
+            await LogActivityAsync(UserActivityType.Login,dto.Email, user.Id, false, "Wrong password", ipAddress);
             throw new UnauthorizedException("Invalid email or password");
         }
 
@@ -87,13 +95,13 @@ public class AuthService : IAuthService
 
         if(role == null)
         {
-            await LogLoginAsync(dto.Email, user.Id, false, "User has no role", ipAddress);
+            await LogActivityAsync(UserActivityType.Login,dto.Email, user.Id, false, "User has no role", ipAddress);
             throw new UnauthorizedException("Invalid email or password");
         }
 
         string token = _tokenService.GenerateToken(user,role);
 
-        await LogLoginAsync(dto.Email, user.Id, true, "Login successful", ipAddress);
+        await LogActivityAsync(UserActivityType.Login,dto.Email, user.Id, true, "Login successful", ipAddress);
 
         LoginResponseDto loginResponseDto = new LoginResponseDto
         {
@@ -105,5 +113,75 @@ public class AuthService : IAuthService
 
 
         return loginResponseDto;
+    }
+
+    public async Task<RegisterResponseDto> RegisterAsync(RegisterRequestDto dto,string? ipAddress)
+    {
+        ValidationResult validationResult = await _registerRequestValidator.ValidateAsync(dto);
+        if (!validationResult.IsValid)
+        {
+            List<string> errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
+            throw new BadRequestException("Validation failed", errors);
+        }
+
+        User? existingUser = await _userManager.FindByEmailAsync(dto.Email);
+        if (existingUser!=null)
+        {
+            await LogActivityAsync(UserActivityType.Register,dto.Email,null,false,"Email already registered",ipAddress);
+            throw new BadRequestException("Email is already registered");
+        }
+
+        User user = new User
+        {
+            UserName = dto.Email,
+            Email = dto.Email,
+            CreatedAt = DateTime.UtcNow,
+            IsDeleted = false
+        };
+
+        await _unitOfWork.BeginTransactionAsync();
+        try
+        {
+            IdentityResult createResult =  await _userManager.CreateAsync(user,dto.Password);
+            if (!createResult.Succeeded)
+            {
+                List<string> errors = createResult.Errors.Select(e => e.Description).ToList();
+                throw new BadRequestException("Registration failed",errors);
+            }
+
+            IdentityResult roleResult = await _userManager.AddToRoleAsync(user,RoleNames.Agent);
+            if (!roleResult.Succeeded)
+            {
+                throw new InvalidOperationException("Failed to assign Agent role to the new user.");
+            }
+
+            Agent agent = new Agent
+            {
+                Id = user.Id,
+                AgentFirstName = dto.AgentFirstName,
+                AgentLastName = dto.AgentLastName, 
+                CompanyName = dto.CompanyName
+            };
+            _agentRepository.Add(agent);
+
+            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.CommitAsync();
+
+        }
+        catch
+        {
+            await _unitOfWork.RollbackAsync();
+            throw;
+        }
+
+        await LogActivityAsync(UserActivityType.Register,dto.Email,user.Id,true,"Registration successful",ipAddress);
+
+        return new RegisterResponseDto
+        {
+            UserId = user.Id,
+            Email = user.Email!,
+            FirstName = dto.AgentFirstName,
+            LastName = dto.AgentLastName
+        };
     }
 }
