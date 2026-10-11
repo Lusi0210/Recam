@@ -1,14 +1,18 @@
 using System;
+using AutoMapper;
+using Remp.Models.Projections;
+using Remp.Service.DTOs;
 
 namespace Remp.Service.Mappers;
 
-public class MappingProfile
+public class MappingProfile : Profile
 {
     public MappingProfile()
     {
-        // 以后在这里加映射规则，例如：
-        // CreateMap<ListingCase, ListingCaseDto>();
-    
+        CreateMap<UserWithRole, UserDto>()
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.User.Id))
+            .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.User.Email))
+            .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.User.CreatedAt));
 
     }
 }
