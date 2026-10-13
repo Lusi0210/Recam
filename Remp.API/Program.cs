@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Remp.API.Middlewares;
+using Remp.Common.Responses;
 using Remp.Common.Settings;
 using Remp.DataAccess.Collections;
 using Remp.DataAccess.Data;
@@ -52,6 +53,25 @@ builder.Services.AddAuthentication(options =>
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
     };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnChallenge = async (JwtBearerChallengeContext context) =>
+        {
+            context.HandleResponse();
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            context.Response.ContentType = "application/json";
+            ApiResponse<object> response = ApiResponse<object>.FailureResponse("Unauthorized. Please log in.");
+            await context.Response.WriteAsJsonAsync(response);
+        },
+        OnForbidden = async (ForbiddenContext context) =>
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            context.Response.ContentType = "application/json";
+            ApiResponse<object> response = ApiResponse<object>.FailureResponse("Forbidden. You do not have permission to access this resource.");
+            await context.Response.WriteAsJsonAsync(response);
+        }
+    };
 });
 
 builder.Services.AddAuthorization();
@@ -84,6 +104,10 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 builder.Services.AddScoped<IUserService, UserService>();
+
+builder.Services.AddScoped<IListingCaseRepository, ListingCaseRepository>();
+builder.Services.AddScoped<IListingCaseHistoryRepository, ListingCaseHistoryRepository>();
+builder.Services.AddScoped<IListingCaseService, ListingCaseService>();
 
 var app = builder.Build();
 

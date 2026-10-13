@@ -19,4 +19,7 @@ public class MongoDbContext
 
     public IMongoCollection<UserActivityLog> UserActivityLogs =>
         _database.GetCollection<UserActivityLog>("UserActivityLogs");
+
+    public IMongoCollection<ListingCaseHistory> ListingCaseHistories =>
+        _database.GetCollection<ListingCaseHistory>("ListingCaseHistories");
 }
