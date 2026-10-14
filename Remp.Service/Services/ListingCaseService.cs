@@ -1,7 +1,10 @@
+using AutoMapper;
 using FluentValidation;
 using FluentValidation.Results;
 using Microsoft.Extensions.Logging;
 using Remp.Common.Exceptions;
+using Remp.Common.Responses;
+using Remp.Models.Constants;
 using Remp.Models.Documents;
 using Remp.Models.Entities;
 using Remp.Models.Enums;
@@ -19,14 +22,25 @@ public class ListingCaseService : IListingCaseService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IListingCaseHistoryRepository _listingCaseHistoryRepository;
     private readonly ILogger<ListingCaseService> _logger;
+    private readonly IValidator<PaginationQueryDto> _paginationValidator;
+    private readonly IMapper _mapper;
 
-    public ListingCaseService(IListingCaseRepository listingCaseRepository,IValidator<CreateListingCaseDto> createListingCaseValidator,IUnitOfWork unitOfWork,IListingCaseHistoryRepository listingCaseHistoryRepository,ILogger<ListingCaseService> logger)
+    public ListingCaseService(
+        IListingCaseRepository listingCaseRepository,
+        IValidator<CreateListingCaseDto> createListingCaseValidator,
+        IUnitOfWork unitOfWork,
+        IListingCaseHistoryRepository listingCaseHistoryRepository,
+        ILogger<ListingCaseService> logger,
+        IValidator<PaginationQueryDto> paginationValidator,
+        IMapper mapper)
     {
         _listingCaseRepository = listingCaseRepository;
         _createListingCaseValidator = createListingCaseValidator;
         _unitOfWork = unitOfWork;
         _listingCaseHistoryRepository = listingCaseHistoryRepository;
         _logger = logger;
+        _paginationValidator = paginationValidator;
+        _mapper = mapper;
     }
 
     private async Task LogListingCaseActivityAsync(ListingCaseActivityType action,int id, string? userId,bool success,string? message,string? ipAddress)
@@ -91,5 +105,40 @@ public class ListingCaseService : IListingCaseService
         await LogListingCaseActivityAsync(ListingCaseActivityType.Create,listingCase.Id,userId,true,"Create listingCase successful",ipAddress);
         
         return listingCase.Id;
-    }  
+    }
+
+    public async Task<PagedResult<GetListingCaseResponseDto>> GetAllListingCaseAsync(string role,string userId,PaginationQueryDto query)
+    {
+        ValidationResult validationResult = await _paginationValidator.ValidateAsync(query);
+        if (!validationResult.IsValid)
+        {
+            List<string> errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
+            throw new BadRequestException("Validation failed", errors);
+        }
+
+        PagedResult<ListingCase> listingCases;
+
+        if(role == RoleNames.PhotographyCompany)
+        {
+            listingCases = await _listingCaseRepository.GetPagedByPhotographyCompanyAsync(query.PageNumber,query.PageSize,userId);
+        } else if (role == RoleNames.Agent)
+        {
+            listingCases = await _listingCaseRepository.GetPagedByAgentAsync(query.PageNumber,query.PageSize,userId);
+        } else
+        {
+            throw new ForbiddenException("You do not have permission to view listing cases.");
+        }
+
+
+        List<GetListingCaseResponseDto> listingCaseDto= _mapper.Map<List<GetListingCaseResponseDto>>(listingCases.Items);
+
+        return new PagedResult<GetListingCaseResponseDto>
+        {
+            Items = listingCaseDto,
+            PageNumber = query.PageNumber,
+            PageSize = query.PageSize,
+            TotalCount = listingCases.TotalCount
+        };
+
+    }
 }

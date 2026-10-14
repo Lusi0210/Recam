@@ -40,5 +40,20 @@ namespace Remp.API.Controllers
             int listingCaseId = await _listingCaseService.CreateListingCaseAsync(dto,userId,ipAddress);
             return StatusCode(StatusCodes.Status201Created,ApiResponse<int>.SuccessResponse(listingCaseId,"Create listing case successful!"));
         }
+
+        [Authorize(Roles = $"{RoleNames.PhotographyCompany},{RoleNames.Agent}")]
+        
+        [HttpGet]
+        [ProducesResponseType(typeof(ApiResponse<PagedResult<GetListingCaseResponseDto>>),StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status403Forbidden)]
+        public async Task<ActionResult<ApiResponse<PagedResult<GetListingCaseResponseDto>>>> GetAllListingCase([FromQuery] PaginationQueryDto query)
+        {
+            string userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            string role = User.FindFirstValue(ClaimTypes.Role)!;
+            PagedResult<GetListingCaseResponseDto> result = await _listingCaseService.GetAllListingCaseAsync(role,userId,query);
+            return Ok(ApiResponse<PagedResult<GetListingCaseResponseDto>>.SuccessResponse(result));
+        }
     }
 }

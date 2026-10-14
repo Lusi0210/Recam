@@ -1,4 +1,5 @@
 using System;
+using Remp.Common.Responses;
 using Remp.Service.DTOs;
 
 namespace Remp.Service.Interfaces;
@@ -6,4 +7,5 @@ namespace Remp.Service.Interfaces;
 public interface IListingCaseService
 {
     Task<int> CreateListingCaseAsync(CreateListingCaseDto dto,string userId,string? ipAddress);
+    Task<PagedResult<GetListingCaseResponseDto>> GetAllListingCaseAsync(string role,string userId,PaginationQueryDto query);
 }

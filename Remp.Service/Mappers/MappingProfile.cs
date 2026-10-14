@@ -1,5 +1,6 @@
 using System;
 using AutoMapper;
+using Remp.Models.Entities;
 using Remp.Models.Projections;
 using Remp.Service.DTOs;
 
@@ -13,6 +14,8 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.User.Id))
             .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.User.Email))
             .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.User.CreatedAt));
+
+        CreateMap<ListingCase,GetListingCaseResponseDto>();
 
     }
 }
