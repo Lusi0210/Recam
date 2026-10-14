@@ -23,6 +23,7 @@ public class ListingCaseService : IListingCaseService
     private readonly IListingCaseHistoryRepository _listingCaseHistoryRepository;
     private readonly ILogger<ListingCaseService> _logger;
     private readonly IValidator<PaginationQueryDto> _paginationValidator;
+    private readonly IValidator<UpdateListingCaseDto> _updateListingCaseValidator;
     private readonly IMapper _mapper;
 
     public ListingCaseService(
@@ -32,6 +33,7 @@ public class ListingCaseService : IListingCaseService
         IListingCaseHistoryRepository listingCaseHistoryRepository,
         ILogger<ListingCaseService> logger,
         IValidator<PaginationQueryDto> paginationValidator,
+        IValidator<UpdateListingCaseDto> updateListingCaseValidator,
         IMapper mapper)
     {
         _listingCaseRepository = listingCaseRepository;
@@ -40,6 +42,7 @@ public class ListingCaseService : IListingCaseService
         _listingCaseHistoryRepository = listingCaseHistoryRepository;
         _logger = logger;
         _paginationValidator = paginationValidator;
+        _updateListingCaseValidator = updateListingCaseValidator;
         _mapper = mapper;
     }
 
@@ -140,5 +143,34 @@ public class ListingCaseService : IListingCaseService
             TotalCount = listingCases.TotalCount
         };
 
+    }
+
+    public async Task<UpdateListingCaseResponseDto> UpdateListingCaseAsync(int id,UpdateListingCaseDto dto,string userId,string? ipAddress)
+    {
+        ValidationResult validationResult = await _updateListingCaseValidator.ValidateAsync(dto);
+        if (!validationResult.IsValid)
+        {
+            List<string> errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
+            throw new BadRequestException("Validation failed",errors);
+        }
+
+        ListingCase? exist = await _listingCaseRepository.GetListingCaseAsync(id);
+        if (exist == null)
+        {
+            throw new NotFoundException("The listing case does not exist!");
+        }
+
+        if (exist.UserId != userId)
+        {
+            throw new ForbiddenException("You can only update your own listing cases.");
+        }
+
+        _mapper.Map(dto, exist);
+        
+        await _unitOfWork.SaveChangesAsync();
+
+        await LogListingCaseActivityAsync(ListingCaseActivityType.Update,id,userId,true,"Update listing case successful!",ipAddress);
+        
+        return _mapper.Map<UpdateListingCaseResponseDto>(exist);
     }
 }

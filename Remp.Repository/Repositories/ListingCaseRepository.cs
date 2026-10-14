@@ -66,5 +66,10 @@ public class ListingCaseRepository : IListingCaseRepository
 
     }
 
-    
+    public async Task<ListingCase?> GetListingCaseAsync(int id)
+    {
+        ListingCase? listingCase = await _dbContext.ListingCases.FirstOrDefaultAsync(l=>l.Id ==id && !l.IsDeleted);
+        return listingCase;
+    }
+
 }

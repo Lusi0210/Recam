@@ -16,6 +16,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.User.CreatedAt));
 
         CreateMap<ListingCase,GetListingCaseResponseDto>();
-
+        CreateMap<UpdateListingCaseDto,ListingCase>();
+        CreateMap<ListingCase,UpdateListingCaseResponseDto>();
     }
 }
