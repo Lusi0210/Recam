@@ -173,4 +173,28 @@ public class ListingCaseService : IListingCaseService
         
         return _mapper.Map<UpdateListingCaseResponseDto>(exist);
     }
+
+    public async Task DeleteListingCaseAsync(int id,string userId,string? ipAddress)
+    {
+        ListingCase? listingCase = await _listingCaseRepository.GetListingCaseWithMediaAssetAsync(id);
+        if(listingCase == null)
+        {
+            throw new NotFoundException("The listing case does not exist!");
+        }
+
+        if (listingCase.UserId != userId)
+        {
+            throw new ForbiddenException("You can only delete your own listing cases.");
+        }
+
+        listingCase.IsDeleted = true;
+        foreach (MediaAsset mediaAsset in listingCase.MediaAssets)
+        {
+            mediaAsset.IsDeleted = true;
+        }
+
+        await _unitOfWork.SaveChangesAsync();
+
+        await LogListingCaseActivityAsync(ListingCaseActivityType.Delete,id,userId,true,"Delete listing case successful!",ipAddress);
+    }
 }

@@ -9,4 +9,5 @@ public interface IListingCaseService
     Task<int> CreateListingCaseAsync(CreateListingCaseDto dto,string userId,string? ipAddress);
     Task<PagedResult<GetListingCaseResponseDto>> GetAllListingCaseAsync(string role,string userId,PaginationQueryDto query);
     Task<UpdateListingCaseResponseDto> UpdateListingCaseAsync(int id,UpdateListingCaseDto dto,string userId,string? ipAddress);
+    Task DeleteListingCaseAsync(int id,string userId,string? ipAddress);
 }

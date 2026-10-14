@@ -72,4 +72,12 @@ public class ListingCaseRepository : IListingCaseRepository
         return listingCase;
     }
 
+    public async Task<ListingCase?> GetListingCaseWithMediaAssetAsync(int id)
+    {
+        ListingCase? listingCase = await _dbContext.ListingCases
+                                                    .Include(l => l.MediaAssets.Where(m => !m.IsDeleted))
+                                                    .FirstOrDefaultAsync(l=>l.Id ==id && !l.IsDeleted);
+        return listingCase;
+    }
+
 }
