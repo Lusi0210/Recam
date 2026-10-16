@@ -12,4 +12,5 @@ public interface IListingCaseService
     Task DeleteListingCaseAsync(int id,string userId,string? ipAddress);
     Task<GetListingCaseDetailsResponseDto> GetListingCaseDetailsByIdAsync(int id,string userId);
     Task<UpdateListingCaseStatusResponseDto> UpdateListingCaseStatusByIdAsync(UpdateListingCaseStatusDto dto,int id,string userId,string? ipAddress);
+    Task<List<GetListingCaseMediaAssetsResponseDto>> GetListingCaseMediaAssetsAsync(int id,string userId);
 }

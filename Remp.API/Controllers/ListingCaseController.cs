@@ -142,6 +142,25 @@ namespace Remp.API.Controllers
             UpdateListingCaseStatusResponseDto result = await _listingCaseService.UpdateListingCaseStatusByIdAsync(dto,id,userId,ipAddress);
             return Ok(ApiResponse<UpdateListingCaseStatusResponseDto>.SuccessResponse(result,"Update listing case status successful!"));
         }
+
+
+        /// <summary>
+        /// Get listing case media assets
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>List of mediaassets</returns>
+        [HttpGet("{id:int}/media")]
+        [Authorize(Roles = $"{RoleNames.PhotographyCompany},{RoleNames.Agent}")]
+        [ProducesResponseType(typeof(ApiResponse<List<GetListingCaseMediaAssetsResponseDto>>),StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<List<GetListingCaseMediaAssetsResponseDto>>>> GetListingCaseMediaAssets(int id)
+        {
+            string userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            List<GetListingCaseMediaAssetsResponseDto> result = await _listingCaseService.GetListingCaseMediaAssetsAsync(id,userId);
+            return Ok(ApiResponse<List<GetListingCaseMediaAssetsResponseDto>>.SuccessResponse(result));
+        }
     }
 
 }
