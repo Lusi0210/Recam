@@ -5,6 +5,7 @@ using Remp.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 using Remp.Repository.Interfaces;
 using Remp.Models.Projections;
+using Microsoft.AspNetCore.Identity;
 
 namespace Remp.Repository.Repositories;
 
@@ -44,5 +45,16 @@ public class UserRepository : IUserRepository
             PageSize = pageSize,
             TotalCount = totalCount
         };
+    }
+
+    public async Task<User?> GetCurrnetUserAsync(string userId)
+    {
+        User? user = await _context.Users.AsNoTracking()
+                                        .Include(u => u.ListingCases.Where(l => !l.IsDeleted))
+                                        .Include(u => u.Agent).ThenInclude(a => a!.ListingCases.Where(l => !l.IsDeleted))
+                                        .AsSplitQuery()
+                                        .FirstOrDefaultAsync(u => u.Id ==userId && !u.IsDeleted);                 
+        return user;
+        
     }
 }

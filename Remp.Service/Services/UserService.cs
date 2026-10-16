@@ -3,6 +3,8 @@ using FluentValidation;
 using FluentValidation.Results;
 using Remp.Common.Exceptions;
 using Remp.Common.Responses;
+using Remp.Models.Constants;
+using Remp.Models.Entities;
 using Remp.Models.Projections;
 using Remp.Repository.Interfaces;
 using Remp.Service.DTOs;
@@ -46,4 +48,39 @@ public class UserService : IUserService
             TotalCount = pagedUsers.TotalCount
         };
     }
+
+    public async Task<GetUserResponseDto> GetCurrnetUserInformationAsync(string userId,string role)
+    {
+        User? user = await _userRepository.GetCurrnetUserAsync(userId);
+        if (user == null)
+        {
+            throw new NotFoundException("The user does not exist!");
+        }
+
+        List<int> listingCaseIds;
+
+        if(role == RoleNames.PhotographyCompany)
+        {
+            listingCaseIds = user.ListingCases.Select(l => l.Id).ToList();
+        } else if(role == RoleNames.Agent)
+        {
+            listingCaseIds = user.Agent?.ListingCases.Select(l => l.Id).ToList() ?? new List<int>();
+        } else
+        {
+            listingCaseIds = new List<int>();
+        }
+        
+
+        
+        return new GetUserResponseDto
+        {
+            UserId = userId,
+            Role = role,
+            ListingCaseIds = listingCaseIds
+        };
+        
+            
+    }
+
+
 }
