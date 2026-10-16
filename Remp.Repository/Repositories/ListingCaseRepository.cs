@@ -90,4 +90,13 @@ public class ListingCaseRepository : IListingCaseRepository
         return listingCase;
     }
 
+    public async Task<ListingCase?> GetListingCaseWithContactsAsync(int id)
+    {
+        return await _dbContext.ListingCases
+            .AsNoTracking()
+            .Include(l => l.Agents)
+            .Include(l => l.CaseContacts)
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(l => l.Id == id && !l.IsDeleted);
+    }
 }

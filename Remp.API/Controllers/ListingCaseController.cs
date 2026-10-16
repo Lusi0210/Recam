@@ -161,6 +161,24 @@ namespace Remp.API.Controllers
             List<GetListingCaseMediaAssetsResponseDto> result = await _listingCaseService.GetListingCaseMediaAssetsAsync(id,userId);
             return Ok(ApiResponse<List<GetListingCaseMediaAssetsResponseDto>>.SuccessResponse(result));
         }
+
+        /// <summary>
+        /// Get listing case case contacts
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>List of case contact</returns>
+        [HttpGet("{id:int}/casecontacts")]
+        [Authorize(Roles = $"{RoleNames.PhotographyCompany},{RoleNames.Agent}")]
+        [ProducesResponseType(typeof(ApiResponse<List<GetCaseContactsResponseDto>>),StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<List<GetCaseContactsResponseDto>>>> GetCaseContactsByListingCaseId(int id)
+        {
+            string userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            List<GetCaseContactsResponseDto> result = await _listingCaseService.GetCaseContactsByListingCaseIdAsync(id,userId);
+            return Ok(ApiResponse<List<GetCaseContactsResponseDto>>.SuccessResponse(result));
+        }
     }
 
 }
