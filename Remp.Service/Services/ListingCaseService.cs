@@ -197,4 +197,25 @@ public class ListingCaseService : IListingCaseService
 
         await LogListingCaseActivityAsync(ListingCaseActivityType.Delete,id,userId,true,"Delete listing case successful!",ipAddress);
     }
+
+
+    public async Task<GetListingCaseDetailsResponseDto> GetListingCaseDetailsByIdAsync(int id,string userId)
+    {
+        ListingCase? listingCase = await _listingCaseRepository.GetListingCaseDetailsByIdAsync(id);
+        if(listingCase == null)
+        {
+            throw new NotFoundException("The listing case does not exist!");
+        }
+
+        bool isOwner = listingCase.UserId == userId;
+        bool isAssignedAgent = listingCase.Agents.Any(a => a.Id == userId);
+
+        if(!isOwner && !isAssignedAgent)
+        {
+            throw new ForbiddenException("You can only get the listing case details assigned to you");
+        }
+
+        return _mapper.Map<GetListingCaseDetailsResponseDto>(listingCase);
+
+    }
 }

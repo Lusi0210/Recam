@@ -102,6 +102,25 @@ namespace Remp.API.Controllers
             await _listingCaseService.DeleteListingCaseAsync(id,userId,ipAddress);
             return Ok(ApiResponse<object>.SuccessResponse(null,"Delete listing case successful!"));
         }
+
+
+        /// <summary>
+        /// Get listing case details by Id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>Listing case details</returns>
+        [ProducesResponseType(typeof(ApiResponse<GetListingCaseDetailsResponseDto>),StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status404NotFound)]
+        [HttpGet("{id:int}")]
+        [Authorize(Roles = $"{RoleNames.PhotographyCompany},{RoleNames.Agent}")]
+        public async Task<ActionResult<ApiResponse<GetListingCaseDetailsResponseDto>>> GetListingCaseDetails(int id)
+        {
+            string userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            GetListingCaseDetailsResponseDto result = await _listingCaseService.GetListingCaseDetailsByIdAsync(id,userId);
+            return Ok(ApiResponse<GetListingCaseDetailsResponseDto>.SuccessResponse(result));
+        }
     }
 
 }

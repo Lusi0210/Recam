@@ -11,4 +11,5 @@ public interface IListingCaseRepository
     Task<PagedResult<ListingCase>> GetPagedByAgentAsync(int pageNumber, int pageSize,string userId);
     Task<ListingCase?> GetListingCaseAsync(int id);
     Task<ListingCase?> GetListingCaseWithMediaAssetAsync(int id);
+    Task<ListingCase?> GetListingCaseDetailsByIdAsync(int id);
 }

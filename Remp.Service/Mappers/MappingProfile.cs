@@ -18,5 +18,9 @@ public class MappingProfile : Profile
         CreateMap<ListingCase,GetListingCaseResponseDto>();
         CreateMap<UpdateListingCaseDto,ListingCase>();
         CreateMap<ListingCase,UpdateListingCaseResponseDto>();
+        CreateMap<MediaAsset,MediaAssetDto>();
+        CreateMap<Agent,AgentDto>()
+            .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.User.Email));
+        CreateMap<ListingCase,GetListingCaseDetailsResponseDto>();
     }
 }
