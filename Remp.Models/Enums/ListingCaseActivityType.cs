@@ -4,5 +4,6 @@ public enum ListingCaseActivityType
 {
     Create,
     Update,
-    Delete
+    Delete,
+    StatusChange
 }

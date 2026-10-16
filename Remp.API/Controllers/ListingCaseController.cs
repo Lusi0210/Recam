@@ -121,6 +121,27 @@ namespace Remp.API.Controllers
             GetListingCaseDetailsResponseDto result = await _listingCaseService.GetListingCaseDetailsByIdAsync(id,userId);
             return Ok(ApiResponse<GetListingCaseDetailsResponseDto>.SuccessResponse(result));
         }
+
+        /// <summary>
+        /// Update listing case status
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="dto"></param>
+        /// <returns>previous status and current status</returns>
+        [HttpPatch("{id:int}/status")]
+        [Authorize(Roles = RoleNames.PhotographyCompany)]
+        [ProducesResponseType(typeof(ApiResponse<UpdateListingCaseStatusResponseDto>),StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<UpdateListingCaseStatusResponseDto>>> UpdateListingCaseStatus(int id,UpdateListingCaseStatusDto dto)
+        {
+            string? ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            string userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            UpdateListingCaseStatusResponseDto result = await _listingCaseService.UpdateListingCaseStatusByIdAsync(dto,id,userId,ipAddress);
+            return Ok(ApiResponse<UpdateListingCaseStatusResponseDto>.SuccessResponse(result,"Update listing case status successful!"));
+        }
     }
 
 }

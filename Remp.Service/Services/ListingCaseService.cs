@@ -24,6 +24,7 @@ public class ListingCaseService : IListingCaseService
     private readonly ILogger<ListingCaseService> _logger;
     private readonly IValidator<PaginationQueryDto> _paginationValidator;
     private readonly IValidator<UpdateListingCaseDto> _updateListingCaseValidator;
+    private readonly IValidator<UpdateListingCaseStatusDto> _updateListingCaseStatusValidator;
     private readonly IMapper _mapper;
 
     public ListingCaseService(
@@ -34,6 +35,7 @@ public class ListingCaseService : IListingCaseService
         ILogger<ListingCaseService> logger,
         IValidator<PaginationQueryDto> paginationValidator,
         IValidator<UpdateListingCaseDto> updateListingCaseValidator,
+        IValidator<UpdateListingCaseStatusDto> updateListingCaseStatusValidator,
         IMapper mapper)
     {
         _listingCaseRepository = listingCaseRepository;
@@ -43,6 +45,7 @@ public class ListingCaseService : IListingCaseService
         _logger = logger;
         _paginationValidator = paginationValidator;
         _updateListingCaseValidator = updateListingCaseValidator;
+        _updateListingCaseStatusValidator = updateListingCaseStatusValidator;
         _mapper = mapper;
     }
 
@@ -67,6 +70,19 @@ public class ListingCaseService : IListingCaseService
         {
             _logger.LogError(ex, "Failed to write listing case history for case {ListingCaseId}", id);
         }
+    }
+
+    private static bool CanTransition(ListcaseStatus from, ListcaseStatus to)
+    {
+        return (from, to) switch
+        {
+            (ListcaseStatus.Created, ListcaseStatus.Pending) => true,
+            (ListcaseStatus.Pending, ListcaseStatus.InReview) => true,
+            (ListcaseStatus.InReview, ListcaseStatus.Delivered) => true,
+            (ListcaseStatus.Pending, ListcaseStatus.Created) => true,
+            (ListcaseStatus.InReview, ListcaseStatus.Pending) => true,
+            _ => false
+        };
     }
  
 
@@ -217,5 +233,41 @@ public class ListingCaseService : IListingCaseService
 
         return _mapper.Map<GetListingCaseDetailsResponseDto>(listingCase);
 
+    }
+
+    public async Task<UpdateListingCaseStatusResponseDto> UpdateListingCaseStatusByIdAsync(UpdateListingCaseStatusDto dto,int id,string userId,string? ipAddress)
+    {
+        ValidationResult validationResult = await _updateListingCaseStatusValidator.ValidateAsync(dto);
+        if (!validationResult.IsValid)
+        {
+            List<string> errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
+            throw new BadRequestException("Validation failed",errors);
+        }
+        ListingCase? listingCase = await _listingCaseRepository.GetListingCaseAsync(id);
+        if(listingCase == null)
+        {
+            throw new NotFoundException("The listing case does not exist!");
+        }
+        ListcaseStatus previousStatus = listingCase.ListcaseStatus;
+
+        if(listingCase.UserId != userId)
+        {
+            throw new ForbiddenException("The listing case only can be updated by owner!");
+        }
+
+        if (!CanTransition(previousStatus, dto.Status))
+        {
+            throw new BadRequestException($"Cannot change status from {previousStatus} to {dto.Status}.");
+        }
+        listingCase.ListcaseStatus = dto.Status;
+        await _unitOfWork.SaveChangesAsync();
+        await LogListingCaseActivityAsync(ListingCaseActivityType.StatusChange,id,userId,true,$"Status changed from {previousStatus} to {dto.Status}",ipAddress);
+
+
+        return new UpdateListingCaseStatusResponseDto{
+            Id = id,
+            PreviousStatus = previousStatus,
+            CurrentStatus = listingCase.ListcaseStatus
+        };
     }
 }
