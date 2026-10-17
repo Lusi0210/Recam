@@ -59,5 +59,21 @@ namespace Remp.API.Controllers
             CreateAgentByPhotographyCompanyResponseDto result = await _agentService.CreateAgentByPhotographyCompanyAsync(dto,userId,ipAddress);
             return StatusCode(StatusCodes.Status201Created,ApiResponse<CreateAgentByPhotographyCompanyResponseDto>.SuccessResponse(result,"Create an agent successfully!"));
         }
+
+        
+
+        [HttpGet("search")]
+        [Authorize(Roles = RoleNames.PhotographyCompany)]
+        [ProducesResponseType(typeof(ApiResponse<SearchAgentByEmailResponseDto>),StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<SearchAgentByEmailResponseDto>>> SearchAgentByEmail([FromQuery] string email)
+        {
+            SearchAgentByEmailResponseDto result = await _agentService.SearchAgentByEmailAsync(email);
+            return Ok(ApiResponse<SearchAgentByEmailResponseDto>.SuccessResponse(result,"Create an agent successfully!"));
+        }
+        
     }
 }

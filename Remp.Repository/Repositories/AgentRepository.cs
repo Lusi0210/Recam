@@ -25,4 +25,12 @@ public class AgentRepository : IAgentRepository
                                                 .FirstOrDefaultAsync(a => a.Id ==id);
         return agent;
     }
+
+    public async Task<Agent?> GetAgentByEmailAsync(string email)
+    {
+        return await _dbContext.Agents
+            .AsNoTracking()
+            .Include(a => a.User)
+            .FirstOrDefaultAsync(a => a.User.Email == email && !a.User.IsDeleted);
+    }
 }

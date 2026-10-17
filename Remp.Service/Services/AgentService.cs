@@ -209,4 +209,23 @@ public class AgentService : IAgentService
             LastName = dto.AgentLastName
         };
     }
+
+    public async Task<SearchAgentByEmailResponseDto> SearchAgentByEmailAsync(string email)
+    {
+        Agent? agent = await _agentRepository.GetAgentByEmailAsync(email);
+        if(agent == null)
+        {
+            throw new NotFoundException("The agent does not exist!");
+        }
+
+
+        return  new SearchAgentByEmailResponseDto{
+            Id = agent.Id,
+            AgentFirstName = agent.AgentFirstName,
+            AgentLastName = agent.AgentLastName,
+            AvatarUrl = agent.AvatarUrl,
+            CompanyName  = agent.CompanyName,
+            Email = email
+        };
+    }
 }
