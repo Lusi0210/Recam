@@ -1,4 +1,5 @@
 using System;
+using Microsoft.EntityFrameworkCore;
 using Remp.DataAccess.Data;
 using Remp.Models.Entities;
 using Remp.Repository.Interfaces;
@@ -16,5 +17,12 @@ public class AgentRepository : IAgentRepository
     public void Add(Agent agent)
     {
         _dbContext.Agents.Add(agent);
+    }
+
+    public async Task<Agent?> GetAgentByIdAsync(string id)
+    {
+        Agent? agent = await _dbContext.Agents.Include(a => a.PhotographyCompanies)
+                                                .FirstOrDefaultAsync(a => a.Id ==id);
+        return agent;
     }
 }

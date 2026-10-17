@@ -6,4 +6,5 @@ namespace Remp.Repository.Interfaces;
 public interface IAgentRepository
 {
     void Add(Agent agent);
+    Task<Agent?> GetAgentByIdAsync(string id);
 }

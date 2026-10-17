@@ -109,6 +109,9 @@ builder.Services.AddScoped<IListingCaseRepository, ListingCaseRepository>();
 builder.Services.AddScoped<IListingCaseHistoryRepository, ListingCaseHistoryRepository>();
 builder.Services.AddScoped<IListingCaseService, ListingCaseService>();
 
+builder.Services.AddScoped<IPhotographyCompanyRepository,PhotographyCompanyRepository>();
+builder.Services.AddScoped<IAgentService,AgentService>();
+
 var app = builder.Build();
 
 await DbSeeder.SeedAsync(app.Services, app.Environment.IsDevelopment());
