@@ -23,5 +23,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.User.Email));
         CreateMap<ListingCase,GetListingCaseDetailsResponseDto>();
         CreateMap<CaseContact,GetCaseContactsResponseDto>();
+        CreateMap<Agent,GetAgentResponseDto>()
+            .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.User.Email));
     }
 }

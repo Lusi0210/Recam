@@ -33,4 +33,17 @@ public class AgentRepository : IAgentRepository
             .Include(a => a.User)
             .FirstOrDefaultAsync(a => a.User.Email == email && !a.User.IsDeleted);
     }
+
+    public async Task<List<Agent>> GetAllAgentsUnderThisAccountAsync(string userId)
+    {
+        List<Agent> result = await _dbContext.Agents
+            .AsNoTracking()
+            .Include(a => a.User)
+            .Where(a => a.PhotographyCompanies.Any(p => p.Id == userId) && !a.User.IsDeleted)
+            .OrderBy(a => a.AgentFirstName)
+            .ToListAsync();
+                                        
+        return result;
+                        
+    }
 }

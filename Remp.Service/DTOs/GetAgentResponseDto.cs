@@ -2,7 +2,7 @@ using System;
 
 namespace Remp.Service.DTOs;
 
-public class SearchAgentByEmailResponseDto
+public class GetAgentResponseDto
 {
     public string Id {get;set;} = null!;
     public string AgentFirstName {get;set;} = null!;

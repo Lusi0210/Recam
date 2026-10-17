@@ -1,5 +1,6 @@
 using System;
 using System.Security.Cryptography;
+using AutoMapper;
 using FluentValidation;
 using FluentValidation.Results;
 using Microsoft.AspNetCore.Identity;
@@ -26,6 +27,7 @@ public class AgentService : IAgentService
     private readonly ILogger<AgentService> _logger;
     private readonly IPhotographyCompanyActivityLogRepository _photographyCompanyActivityLogRepository;
     private readonly IEmailService _emailService;
+    private readonly IMapper _mapper;
     public AgentService(
         IAgentRepository agentRepository,
         IPhotographyCompanyRepository photographyCompanyRepository,
@@ -34,7 +36,8 @@ public class AgentService : IAgentService
         UserManager<User> userManager,
         ILogger<AgentService> logger,
         IPhotographyCompanyActivityLogRepository photographyCompanyActivityLogRepository,
-        IEmailService emailService)
+        IEmailService emailService,
+        IMapper mapper)
     {
         _agentRepository = agentRepository;
         _photographyCompanyRepository = photographyCompanyRepository;
@@ -44,6 +47,7 @@ public class AgentService : IAgentService
         _logger = logger;
         _photographyCompanyActivityLogRepository = photographyCompanyActivityLogRepository;
         _emailService = emailService;
+        _mapper = mapper;
     }
 
     private static string GenerateRandomPassword(int length = 12)
@@ -196,7 +200,7 @@ public class AgentService : IAgentService
 
         await _emailService.SendAsync(dto.Email, "Your RECAM account",$"Your account has been created.\nEmail: {dto.Email}\nPassword: {password}");
 
-        await LogActivityAsync(PhotographyCompanyActivityType.CreateAgent,dto.Email,userId,true,"Registration successful",ipAddress);
+        await LogActivityAsync(PhotographyCompanyActivityType.CreateAgent,dto.Email,userId,true,"Agent created successfully",ipAddress);
 
         
         
@@ -210,7 +214,7 @@ public class AgentService : IAgentService
         };
     }
 
-    public async Task<SearchAgentByEmailResponseDto> SearchAgentByEmailAsync(string email)
+    public async Task<GetAgentResponseDto> SearchAgentByEmailAsync(string email)
     {
         Agent? agent = await _agentRepository.GetAgentByEmailAsync(email);
         if(agent == null)
@@ -219,13 +223,14 @@ public class AgentService : IAgentService
         }
 
 
-        return  new SearchAgentByEmailResponseDto{
-            Id = agent.Id,
-            AgentFirstName = agent.AgentFirstName,
-            AgentLastName = agent.AgentLastName,
-            AvatarUrl = agent.AvatarUrl,
-            CompanyName  = agent.CompanyName,
-            Email = email
-        };
+        return _mapper.Map<GetAgentResponseDto>(agent);
+    }
+
+    public async Task<List<GetAgentResponseDto>> GetAllAgentsUnderThisAccountAsync(string userId)
+    {
+        List<Agent> listOfAgent = await _agentRepository.GetAllAgentsUnderThisAccountAsync(userId);
+
+        List<GetAgentResponseDto> responseDtos = _mapper.Map<List<GetAgentResponseDto>>(listOfAgent);
+        return responseDtos;    
     }
 }

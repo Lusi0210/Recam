@@ -7,5 +7,6 @@ public interface IAgentService
 {
     Task<string> AddAgentToPhotographyCompanyAsync(string userId,AddAgentToPhotographyCompanyDto dto);
     Task<CreateAgentByPhotographyCompanyResponseDto> CreateAgentByPhotographyCompanyAsync(CreateAgentByPhotographyCompanyDto dto,string userId,string? ipAddress);
-    Task<SearchAgentByEmailResponseDto> SearchAgentByEmailAsync(string email);
+    Task<GetAgentResponseDto> SearchAgentByEmailAsync(string email);
+    Task<List<GetAgentResponseDto>> GetAllAgentsUnderThisAccountAsync(string userId);
 }

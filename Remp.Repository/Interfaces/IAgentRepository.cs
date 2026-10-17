@@ -8,4 +8,5 @@ public interface IAgentRepository
     void Add(Agent agent);
     Task<Agent?> GetAgentByIdAsync(string id);
     Task<Agent?> GetAgentByEmailAsync(string email);
+    Task<List<Agent>> GetAllAgentsUnderThisAccountAsync(string userId);
 }
