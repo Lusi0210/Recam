@@ -38,5 +38,26 @@ namespace Remp.API.Controllers
             string result = await _agentService.AddAgentToPhotographyCompanyAsync(userId,dto);
             return StatusCode(StatusCodes.Status201Created,ApiResponse<string>.SuccessResponse(result, "Agent added to your company successfully!"));
         }
+
+
+        /// <summary>
+        /// Create an agent by photography company
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns>new agent information</returns>
+        [HttpPost("create-agent")]
+        [Authorize(Roles = RoleNames.PhotographyCompany)]
+        [ProducesResponseType(typeof(ApiResponse<string>),StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<CreateAgentByPhotographyCompanyResponseDto>>> CreateAnAgentByPhotographyCompany(CreateAgentByPhotographyCompanyDto dto)
+        {
+            string userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            string? ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            CreateAgentByPhotographyCompanyResponseDto result = await _agentService.CreateAgentByPhotographyCompanyAsync(dto,userId,ipAddress);
+            return StatusCode(StatusCodes.Status201Created,ApiResponse<CreateAgentByPhotographyCompanyResponseDto>.SuccessResponse(result,"Create an agent successfully!"));
+        }
     }
 }

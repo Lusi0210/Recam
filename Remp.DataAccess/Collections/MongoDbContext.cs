@@ -22,4 +22,7 @@ public class MongoDbContext
 
     public IMongoCollection<ListingCaseHistory> ListingCaseHistories =>
         _database.GetCollection<ListingCaseHistory>("ListingCaseHistories");
+
+    public IMongoCollection<PhotographyCompanyActivityLog> PhotographyCompanyActivityLogs =>
+        _database.GetCollection<PhotographyCompanyActivityLog>("PhotographyCompanyActivityLogs");
 }
