@@ -1,6 +1,9 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Remp.Common.Responses;
+using Remp.Models.Constants;
 using Remp.Service.DTOs;
 using Remp.Service.Interfaces;
 
@@ -48,5 +51,23 @@ namespace Remp.API.Controllers
             return StatusCode(StatusCodes.Status201Created,ApiResponse<RegisterResponseDto>.SuccessResponse(result, "Registration successful"));
         }
 
+        /// <summary>
+        /// Update user password
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns>User Id and Email</returns>
+        [HttpPost("update-password")]
+        [Authorize(Roles = $"{RoleNames.PhotographyCompany},{RoleNames.Agent}")]
+        [ProducesResponseType(typeof(ApiResponse<ChangePasswordResponseDto>),StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<ChangePasswordResponseDto>>> UpdatePassword(ChangePasswordDto dto)
+        {
+            string? ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            string userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            ChangePasswordResponseDto result = await _authService.ChangePasswordAsync(dto,userId,ipAddress);
+            return Ok(ApiResponse<ChangePasswordResponseDto>.SuccessResponse(result,"Update password successful!"));
+        }
     }
 }

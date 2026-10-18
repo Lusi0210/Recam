@@ -26,7 +26,17 @@ public class AuthService : IAuthService
     private readonly ILogger<AuthService> _logger;
     private readonly IAgentRepository _agentRepository;
     private readonly IUnitOfWork _unitOfWork;
-    public AuthService(UserManager<User> userManager,ITokenService tokenService,IValidator<LoginRequestDto> loginRequestValidator,IValidator<RegisterRequestDto> registerRequestValidator,IUserActivityLogRepository activityLogRepository,ILogger<AuthService> logger,IAgentRepository agentRepository,IUnitOfWork unitOfWork)
+    private readonly IValidator<ChangePasswordDto> _changePasswordValidator;
+    public AuthService(
+        UserManager<User> userManager,
+        ITokenService tokenService,
+        IValidator<LoginRequestDto> loginRequestValidator,
+        IValidator<RegisterRequestDto> registerRequestValidator,
+        IUserActivityLogRepository activityLogRepository,
+        ILogger<AuthService> logger,
+        IAgentRepository agentRepository,
+        IUnitOfWork unitOfWork,
+        IValidator<ChangePasswordDto> changePasswordValidator)
     {
         _userManager = userManager;
         _tokenService = tokenService;
@@ -36,6 +46,7 @@ public class AuthService : IAuthService
         _logger = logger;
         _agentRepository = agentRepository;
         _unitOfWork = unitOfWork;
+        _changePasswordValidator = changePasswordValidator;
     }
 
     private async Task LogActivityAsync(UserActivityType action,string email, string? userId, bool success, string message, string? ipAddress)
@@ -182,6 +193,39 @@ public class AuthService : IAuthService
             Email = user.Email!,
             FirstName = dto.AgentFirstName,
             LastName = dto.AgentLastName
+        };
+    }
+
+    public async Task<ChangePasswordResponseDto> ChangePasswordAsync(ChangePasswordDto dto, string userId, string? ipAddress)
+    {
+        ValidationResult validationResult = await _changePasswordValidator.ValidateAsync(dto);
+        if (!validationResult.IsValid)
+        {
+            List<string> errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
+            throw new BadRequestException("Validation failed", errors);
+        }
+
+        User? user = await _userManager.FindByIdAsync(userId);
+
+        if (user == null || user.IsDeleted)
+        {
+            throw new NotFoundException("The user does not exist!");
+        }
+
+        IdentityResult result = await _userManager.ChangePasswordAsync(user,dto.CurrentPassword,dto.NewPassword);
+        if (!result.Succeeded)
+        {
+            List<string> errors = result.Errors.Select(e => e.Description).ToList();
+            await LogActivityAsync(UserActivityType.UpdatePassword, user.Email!, user.Id, false, "Update password failed", ipAddress);
+            throw new BadRequestException("Update password failed", errors);
+        }
+
+        await LogActivityAsync(UserActivityType.UpdatePassword,user.Email!,user.Id,true,"Update password successful!",ipAddress);
+
+        return new ChangePasswordResponseDto
+        {
+            UserId = user.Id,
+            Email = user.Email!,
         };
     }
 }
