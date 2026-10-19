@@ -238,6 +238,24 @@ namespace Remp.API.Controllers
             List<MediaAssetDto> result = await _mediaAssetService.UploadMediaAssetsAsync(id, mediaType, files, userId, ipAddress);
             return StatusCode(StatusCodes.Status201Created, ApiResponse<List<MediaAssetDto>>.SuccessResponse(result, "Upload media successful!"));
         }
+
+        /// <summary>
+        /// Download all media of a listing case as a zip file
+        /// </summary>
+        /// <param name="id">Listing case id</param>
+        /// <returns>A zip file</returns>
+        [HttpGet("{id:int}/download")]
+        [Authorize(Roles = $"{RoleNames.PhotographyCompany},{RoleNames.Agent}")]
+        [ProducesResponseType(typeof(FileStreamResult), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DownloadListingCaseMedia(int id)
+        {
+            string userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            (Stream content, string fileName) = await _mediaAssetService.DownloadListingCaseMediaZipAsync(id, userId);
+            return File(content, "application/zip", fileName);
+        }
     }
 
 }

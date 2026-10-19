@@ -1,4 +1,5 @@
 using System;
+using System.IO.Compression;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -193,5 +194,64 @@ public class MediaAssetService : IMediaAssetService
         }
 
         return await _blobStorageService.DownloadFileAsync(mediaAsset.MediaUrl);
+    }
+
+    public async Task<(Stream Content, string FileName)> DownloadListingCaseMediaZipAsync(int listingCaseId, string userId)
+    {
+        ListingCase? listingCase = await _listingCaseRepository.GetListingCaseDetailsByIdAsync(listingCaseId);
+        if (listingCase == null)
+        {
+            throw new NotFoundException("The listing case does not exist!");
+        }
+
+        bool isOwner = listingCase.UserId == userId;
+        bool isAssignedAgent = listingCase.Agents.Any(a => a.Id == userId);
+        if (!isOwner && !isAssignedAgent)
+        {
+            throw new ForbiddenException("You do not have permission to download this listing case's media.");
+        }
+
+        if (listingCase.MediaAssets.Count == 0)
+        {
+            throw new NotFoundException("This listing case has no media to download.");
+        }
+
+        string tempPath = Path.GetTempFileName();
+        FileStream zipStream = new FileStream(tempPath, FileMode.Create, FileAccess.ReadWrite, FileShare.None, 81920, FileOptions.DeleteOnClose);
+
+        try
+        {
+            using (ZipArchive archive = new ZipArchive(zipStream, ZipArchiveMode.Create, leaveOpen: true))
+            {
+                foreach (MediaAsset mediaAsset in listingCase.MediaAssets)
+                {
+                    (Stream Content, string ContentType, string FileName) file;
+                    try
+                    {
+                        file = await _blobStorageService.DownloadFileAsync(mediaAsset.MediaUrl);
+                    }
+                    catch (NotFoundException)
+                    {
+                        _logger.LogWarning("Blob {BlobName} for media {MediaId} is missing, skipped in zip", mediaAsset.MediaUrl, mediaAsset.Id);
+                        continue;
+                    }
+
+                    string entryName = $"{mediaAsset.MediaType}/{file.FileName}";
+                    ZipArchiveEntry entry = archive.CreateEntry(entryName, CompressionLevel.Fastest);
+
+                    using Stream entryStream = entry.Open();
+                    using Stream blobStream = file.Content;
+                    await blobStream.CopyToAsync(entryStream);
+                }
+            }
+
+            zipStream.Position = 0;
+            return (zipStream, $"listing-case-{listingCaseId}-media.zip");
+        }
+        catch
+        {
+            await zipStream.DisposeAsync();
+            throw;
+        }
     }
 }
