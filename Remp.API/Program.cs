@@ -1,4 +1,5 @@
 using System.Text;
+using Azure.Storage.Blobs;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -93,6 +94,12 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Host.UseSerilog();
 
+builder.Services.Configure<AzureBlobSettings>(builder.Configuration.GetSection("AzureBlobSettings"));
+AzureBlobSettings blobSettings = builder.Configuration.GetSection("AzureBlobSettings").Get<AzureBlobSettings>()!;
+
+builder.Services.AddSingleton<BlobServiceClient>(new BlobServiceClient(blobSettings.ConnectionString));
+builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
+
 builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDbSettings"));
 builder.Services.AddSingleton<MongoDbContext>();
 
@@ -121,6 +128,11 @@ builder.Services.AddScoped<ICaseContactService,CaseContactService>();
 var app = builder.Build();
 
 await DbSeeder.SeedAsync(app.Services, app.Environment.IsDevelopment());
+
+BlobServiceClient blobServiceClient = app.Services.GetRequiredService<BlobServiceClient>();
+await blobServiceClient
+    .GetBlobContainerClient(blobSettings.ContainerName)
+    .CreateIfNotExistsAsync(Azure.Storage.Blobs.Models.PublicAccessType.None);
 
 app.UseSerilogRequestLogging();
 app.UseMiddleware<ExceptionHandlingMiddleware>(); 
