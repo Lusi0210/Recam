@@ -6,4 +6,5 @@ namespace Remp.Repository.Interfaces;
 public interface IMediaAssetRepository
 {
     void Add(MediaAsset mediaAsset);
+    Task<MediaAsset?> GetMediaAssetWithListingCaseAsync(int id);
 }

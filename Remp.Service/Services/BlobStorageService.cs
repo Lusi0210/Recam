@@ -1,8 +1,10 @@
 using System;
+using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
 using Microsoft.Extensions.Options;
+using Remp.Common.Exceptions;
 using Remp.Common.Settings;
 using Remp.Service.Interfaces;
 
@@ -52,4 +54,24 @@ public class BlobStorageService : IBlobStorageService
         Uri sasUri = blobClient.GenerateSasUri(sasBuilder);
         return sasUri.ToString();
     }
+
+    public async Task<(Stream Content, string ContentType, string FileName)> DownloadFileAsync(string blobName)
+    {
+        BlobClient blobClient = _containerClient.GetBlobClient(blobName);
+
+        try
+        {
+            Response<BlobDownloadStreamingResult> response = await blobClient.DownloadStreamingAsync();
+            Stream content = response.Value.Content;
+            string contentType = response.Value.Details.ContentType ?? "application/octet-stream";
+            string fileName = Path.GetFileName(blobName);
+
+            return (content, contentType, fileName);
+        }
+        catch (RequestFailedException ex) when (ex.Status == 404)
+        {
+            throw new NotFoundException("The file does not exist in storage.");
+        }
+    }
+
 }

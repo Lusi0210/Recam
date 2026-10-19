@@ -176,4 +176,22 @@ public class MediaAssetService : IMediaAssetService
 
         return result;
     }
+
+    public async Task<(Stream Content, string ContentType, string FileName)> DownloadMediaAssetAsync(int mediaAssetId, string userId)
+    {
+        MediaAsset? mediaAsset = await _mediaAssetRepository.GetMediaAssetWithListingCaseAsync(mediaAssetId);
+        if (mediaAsset == null)
+        {
+            throw new NotFoundException("The media asset does not exist!");
+        }
+
+        bool isOwner = mediaAsset.ListingCase.UserId == userId;
+        bool isAssignedAgent = mediaAsset.ListingCase.Agents.Any(a => a.Id == userId);
+        if (!isOwner && !isAssignedAgent)
+        {
+            throw new ForbiddenException("You do not have permission to download this media.");
+        }
+
+        return await _blobStorageService.DownloadFileAsync(mediaAsset.MediaUrl);
+    }
 }
