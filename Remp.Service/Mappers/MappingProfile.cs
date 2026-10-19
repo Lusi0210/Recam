@@ -25,5 +25,6 @@ public class MappingProfile : Profile
         CreateMap<CaseContact,GetCaseContactsResponseDto>();
         CreateMap<Agent,GetAgentResponseDto>()
             .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.User.Email));
+        CreateMap<AddCaseContactDto,CaseContact>();
     }
 }

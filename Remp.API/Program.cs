@@ -115,6 +115,9 @@ builder.Services.AddScoped<IAgentService,AgentService>();
 builder.Services.AddScoped<IEmailService, DevEmailService>();
 builder.Services.AddScoped<IPhotographyCompanyActivityLogRepository,PhotographyCompanyActivityLogRepository>();
 
+builder.Services.AddScoped<ICaseContactRepository,CaseContactRepository>();
+builder.Services.AddScoped<ICaseContactService,CaseContactService>();
+
 var app = builder.Build();
 
 await DbSeeder.SeedAsync(app.Services, app.Environment.IsDevelopment());

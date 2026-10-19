@@ -99,4 +99,11 @@ public class ListingCaseRepository : IListingCaseRepository
             .AsSplitQuery()
             .FirstOrDefaultAsync(l => l.Id == id && !l.IsDeleted);
     }
+    
+    public async Task<ListingCase?> GetListingCaseWithAgentAsync(int id)
+    {
+        return await _dbContext.ListingCases
+            .Include(l => l.Agents)
+            .FirstOrDefaultAsync(l => l.Id == id && !l.IsDeleted);
+    }
 }

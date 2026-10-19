@@ -13,4 +13,5 @@ public interface IListingCaseRepository
     Task<ListingCase?> GetListingCaseWithMediaAssetAsync(int id);
     Task<ListingCase?> GetListingCaseDetailsByIdAsync(int id);
     Task<ListingCase?> GetListingCaseWithContactsAsync(int id);
+    Task<ListingCase?> GetListingCaseWithAgentAsync(int id);
 }

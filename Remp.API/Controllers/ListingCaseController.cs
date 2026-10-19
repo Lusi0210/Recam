@@ -14,10 +14,14 @@ namespace Remp.API.Controllers
     public class ListingCaseController : ControllerBase
     {
         private readonly IListingCaseService _listingCaseService;
+        private readonly ICaseContactService _caseContactService;
 
-        public ListingCaseController(IListingCaseService listingCaseService)
+        public ListingCaseController(
+            IListingCaseService listingCaseService,
+            ICaseContactService caseContactService)
         {
             _listingCaseService = listingCaseService;
+            _caseContactService = caseContactService;
         }
 
 
@@ -178,6 +182,39 @@ namespace Remp.API.Controllers
             string userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
             List<GetCaseContactsResponseDto> result = await _listingCaseService.GetCaseContactsByListingCaseIdAsync(id,userId);
             return Ok(ApiResponse<List<GetCaseContactsResponseDto>>.SuccessResponse(result));
+        }
+
+
+        [HttpPost("{id:int}/agents")]
+        [Authorize(Roles = RoleNames.PhotographyCompany)]
+        [ProducesResponseType(typeof(ApiResponse<AddAgentToListingCaseResponseDto>),StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<AddAgentToListingCaseResponseDto>>> AddAgentToListingCase(AddAgentToListingCaseDto dto,int id)
+        {
+            string userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            string? ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            string email = User.FindFirstValue(ClaimTypes.Email)!;
+            AddAgentToListingCaseResponseDto result = await _listingCaseService.AddAgentToListingCaseAsync(dto,userId,id,ipAddress,email);
+            return StatusCode(StatusCodes.Status201Created,ApiResponse<AddAgentToListingCaseResponseDto>.SuccessResponse(result,"Agent assigned successfully!"));
+        }
+
+
+        [HttpPost("{id:int}/casecontacts")]
+        [Authorize(Roles = $"{RoleNames.PhotographyCompany},{RoleNames.Agent}")]
+        [ProducesResponseType(typeof(ApiResponse<int>),StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<int>>> AddCaseContactToListingCase(int id,AddCaseContactDto dto)
+        {
+            string userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            // string? ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            int result = await _caseContactService.AddCaseContactToListingCaseAsync(id,dto,userId);
+            return StatusCode(StatusCodes.Status201Created,ApiResponse<int>.SuccessResponse(result,"Add case contact successful!"));
         }
     }
 

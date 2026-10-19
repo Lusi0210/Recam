@@ -26,6 +26,9 @@ public class ListingCaseService : IListingCaseService
     private readonly IValidator<UpdateListingCaseDto> _updateListingCaseValidator;
     private readonly IValidator<UpdateListingCaseStatusDto> _updateListingCaseStatusValidator;
     private readonly IMapper _mapper;
+    private readonly IAgentRepository _agentRepository;
+    private readonly IPhotographyCompanyActivityLogRepository _photographyCompanyActivityLogRepository;
+    private readonly IValidator<AddAgentToListingCaseDto> _addAgentToListingCaseValidator;
 
     public ListingCaseService(
         IListingCaseRepository listingCaseRepository,
@@ -36,7 +39,10 @@ public class ListingCaseService : IListingCaseService
         IValidator<PaginationQueryDto> paginationValidator,
         IValidator<UpdateListingCaseDto> updateListingCaseValidator,
         IValidator<UpdateListingCaseStatusDto> updateListingCaseStatusValidator,
-        IMapper mapper)
+        IMapper mapper,
+        IAgentRepository agentRepository,
+        IPhotographyCompanyActivityLogRepository photographyCompanyActivityLogRepository,
+        IValidator<AddAgentToListingCaseDto> addAgentToListingCaseValidator)
     {
         _listingCaseRepository = listingCaseRepository;
         _createListingCaseValidator = createListingCaseValidator;
@@ -47,6 +53,9 @@ public class ListingCaseService : IListingCaseService
         _updateListingCaseValidator = updateListingCaseValidator;
         _updateListingCaseStatusValidator = updateListingCaseStatusValidator;
         _mapper = mapper;
+        _agentRepository = agentRepository;
+        _photographyCompanyActivityLogRepository = photographyCompanyActivityLogRepository;
+        _addAgentToListingCaseValidator = addAgentToListingCaseValidator;
     }
 
     private async Task LogListingCaseActivityAsync(ListingCaseActivityType action,int id, string? userId,bool success,string? message,string? ipAddress)
@@ -71,6 +80,29 @@ public class ListingCaseService : IListingCaseService
             _logger.LogError(ex, "Failed to write listing case history for case {ListingCaseId}", id);
         }
     }
+
+    private async Task LogActivityAsync(PhotographyCompanyActivityType action,string email, string? userId, bool success, string message, string? ipAddress)
+    {
+        PhotographyCompanyActivityLog log = new PhotographyCompanyActivityLog
+        {
+            UserId = userId,
+            Email = email,
+            Action = action,
+            Success = success,
+            Message = message,
+            IpAddress = ipAddress,
+            Timestamp = DateTime.UtcNow
+        };
+
+        try
+        {
+            await _photographyCompanyActivityLogRepository.AddAsync(log);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to write photography company activity log for {Email}", email);
+        }
+    } 
 
     private static bool CanTransition(ListcaseStatus from, ListcaseStatus to)
     {
@@ -319,5 +351,52 @@ public class ListingCaseService : IListingCaseService
         List<GetCaseContactsResponseDto> responseDtos = _mapper.Map<List<GetCaseContactsResponseDto>>(listingCase.CaseContacts);
 
         return responseDtos;
+    }
+
+    public async Task<AddAgentToListingCaseResponseDto> AddAgentToListingCaseAsync(AddAgentToListingCaseDto dto,string userId,int id,string? ipAddress,string email)
+    {
+        ValidationResult validationResult = await _addAgentToListingCaseValidator.ValidateAsync(dto);
+        if (!validationResult.IsValid)
+        {
+            List<string> errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
+            throw new BadRequestException("Validation failed",errors);
+        }
+        ListingCase? listingCase = await _listingCaseRepository.GetListingCaseWithAgentAsync(id);
+        if(listingCase == null)
+        {
+            throw new NotFoundException("The listing case does not exist!");
+        }
+
+        if(listingCase.UserId != userId)
+        {
+            throw new ForbiddenException("You can only add agent to your listing case!");
+        }
+
+        Agent? agent = await _agentRepository.GetAgentByIdAsync(dto.Id);
+        if (agent == null)
+        {
+            throw new NotFoundException("The agent does not exist!");
+        }
+
+        if (listingCase.Agents.Any(a => a.Id == agent.Id))
+        {
+            throw new BadRequestException("This agent has already been assigned to this listing case.");
+        }
+
+        if (!agent.PhotographyCompanies.Any(p => p.Id == userId))
+        {
+            throw new BadRequestException("This agent is not in your company.");
+        }
+
+        listingCase.Agents.Add(agent);
+        await _unitOfWork.SaveChangesAsync();
+
+        await LogActivityAsync(PhotographyCompanyActivityType.AddAgentToListingCase,email,userId,true,$"Assigned agent {agent.Id} to listing case {id}",ipAddress);
+        
+        return new AddAgentToListingCaseResponseDto
+        {
+            Id = agent.Id,
+            ListingCaseId = id
+        };
     }
 }
