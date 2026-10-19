@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Remp.Common.Responses;
 using Remp.Models.Constants;
+using Remp.Models.Enums;
 using Remp.Service.DTOs;
 using Remp.Service.Interfaces;
 
@@ -15,13 +16,16 @@ namespace Remp.API.Controllers
     {
         private readonly IListingCaseService _listingCaseService;
         private readonly ICaseContactService _caseContactService;
+        private readonly IMediaAssetService _mediaAssetService;
 
         public ListingCaseController(
             IListingCaseService listingCaseService,
-            ICaseContactService caseContactService)
+            ICaseContactService caseContactService,
+            IMediaAssetService mediaAssetService)
         {
             _listingCaseService = listingCaseService;
             _caseContactService = caseContactService;
+            _mediaAssetService = mediaAssetService;
         }
 
 
@@ -215,6 +219,24 @@ namespace Remp.API.Controllers
             // string? ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
             int result = await _caseContactService.AddCaseContactToListingCaseAsync(id,dto,userId);
             return StatusCode(StatusCodes.Status201Created,ApiResponse<int>.SuccessResponse(result,"Add case contact successful!"));
+        }
+
+        [HttpPost("{id:int}/media")]
+        [Authorize(Roles = RoleNames.PhotographyCompany)]
+        [Consumes("multipart/form-data")]
+        [RequestSizeLimit(524_288_000)]
+        [RequestFormLimits(MultipartBodyLengthLimit = 524_288_000)]
+        [ProducesResponseType(typeof(ApiResponse<List<MediaAssetDto>>), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<List<MediaAssetDto>>>> UploadMediaAssets(int id, [FromForm] List<IFormFile> files, [FromForm] MediaType mediaType)
+        {
+            string userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            string? ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            List<MediaAssetDto> result = await _mediaAssetService.UploadMediaAssetsAsync(id, mediaType, files, userId, ipAddress);
+            return StatusCode(StatusCodes.Status201Created, ApiResponse<List<MediaAssetDto>>.SuccessResponse(result, "Upload media successful!"));
         }
     }
 

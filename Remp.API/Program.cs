@@ -125,6 +125,9 @@ builder.Services.AddScoped<IPhotographyCompanyActivityLogRepository,PhotographyC
 builder.Services.AddScoped<ICaseContactRepository,CaseContactRepository>();
 builder.Services.AddScoped<ICaseContactService,CaseContactService>();
 
+builder.Services.AddScoped<IMediaAssetRepository, MediaAssetRepository>();
+builder.Services.AddScoped<IMediaAssetService, MediaAssetService>();
+
 var app = builder.Build();
 
 await DbSeeder.SeedAsync(app.Services, app.Environment.IsDevelopment());

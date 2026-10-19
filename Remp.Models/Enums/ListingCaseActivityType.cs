@@ -5,5 +5,6 @@ public enum ListingCaseActivityType
     Create,
     Update,
     Delete,
-    StatusChange
+    StatusChange,
+    UploadMedia
 }

@@ -29,6 +29,7 @@ public class ListingCaseService : IListingCaseService
     private readonly IAgentRepository _agentRepository;
     private readonly IPhotographyCompanyActivityLogRepository _photographyCompanyActivityLogRepository;
     private readonly IValidator<AddAgentToListingCaseDto> _addAgentToListingCaseValidator;
+    private readonly IBlobStorageService _blobStorageService;
 
     public ListingCaseService(
         IListingCaseRepository listingCaseRepository,
@@ -42,7 +43,8 @@ public class ListingCaseService : IListingCaseService
         IMapper mapper,
         IAgentRepository agentRepository,
         IPhotographyCompanyActivityLogRepository photographyCompanyActivityLogRepository,
-        IValidator<AddAgentToListingCaseDto> addAgentToListingCaseValidator)
+        IValidator<AddAgentToListingCaseDto> addAgentToListingCaseValidator,
+        IBlobStorageService blobStorageService)
     {
         _listingCaseRepository = listingCaseRepository;
         _createListingCaseValidator = createListingCaseValidator;
@@ -56,6 +58,14 @@ public class ListingCaseService : IListingCaseService
         _agentRepository = agentRepository;
         _photographyCompanyActivityLogRepository = photographyCompanyActivityLogRepository;
         _addAgentToListingCaseValidator = addAgentToListingCaseValidator;
+        _blobStorageService = blobStorageService;
+    }
+
+    private MediaAssetDto ToMediaAssetDto(MediaAsset mediaAsset)
+    {
+        MediaAssetDto dto = _mapper.Map<MediaAssetDto>(mediaAsset);
+        dto.MediaUrl = _blobStorageService.GetReadUrl(mediaAsset.MediaUrl);
+        return dto;
     }
 
     private async Task LogListingCaseActivityAsync(ListingCaseActivityType action,int id, string? userId,bool success,string? message,string? ipAddress)
@@ -263,7 +273,12 @@ public class ListingCaseService : IListingCaseService
             throw new ForbiddenException("You can only get the listing case details assigned to you");
         }
 
-        return _mapper.Map<GetListingCaseDetailsResponseDto>(listingCase);
+        GetListingCaseDetailsResponseDto result = _mapper.Map<GetListingCaseDetailsResponseDto>(listingCase);
+        foreach (MediaAssetDto media in result.MediaAssets)
+        {
+            media.MediaUrl = _blobStorageService.GetReadUrl(media.MediaUrl);
+        }
+        return result;
 
     }
 
@@ -325,7 +340,7 @@ public class ListingCaseService : IListingCaseService
             .Select(group => new GetListingCaseMediaAssetsResponseDto
             {
                 MediaType = group.Key,
-                MediaAssets = _mapper.Map<List<MediaAssetDto>>(group)
+                MediaAssets = group.Select(m => ToMediaAssetDto(m)).ToList()
             })
             .ToList();
         
