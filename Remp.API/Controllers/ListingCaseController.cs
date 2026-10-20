@@ -256,6 +256,27 @@ namespace Remp.API.Controllers
             (Stream content, string fileName) = await _mediaAssetService.DownloadListingCaseMediaZipAsync(id, userId);
             return File(content, "application/zip", fileName);
         }
+
+
+        /// <summary>
+        /// Set the cover image of a listing case
+        /// </summary>
+        /// <param name="id">Listing case id</param>
+        /// <param name="dto">The selected media id</param>
+        [HttpPut("{id:int}/cover-image")]
+        [Authorize(Roles = RoleNames.Agent)]
+        [ProducesResponseType(typeof(ApiResponse<SetCoverImageResponseDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<SetCoverImageResponseDto>>> SetCoverImage(int id, SetCoverImageDto dto)
+        {
+            string userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            string? ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            SetCoverImageResponseDto result = await _listingCaseService.SetCoverImageAsync(id, dto, userId, ipAddress);
+            return Ok(ApiResponse<SetCoverImageResponseDto>.SuccessResponse(result, "Set cover image successful!"));
+        }
     }
 
 }

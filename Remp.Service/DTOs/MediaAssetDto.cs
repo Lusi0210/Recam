@@ -10,5 +10,5 @@ public class MediaAssetDto
     public string MediaUrl {get;set;} = null!;
     public DateTime UploadedAt {get;set;}
     public string UserId {get;set;} = null!;
-    
+    public bool IsHero { get; set; }
 }

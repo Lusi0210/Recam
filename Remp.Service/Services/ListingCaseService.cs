@@ -30,6 +30,7 @@ public class ListingCaseService : IListingCaseService
     private readonly IPhotographyCompanyActivityLogRepository _photographyCompanyActivityLogRepository;
     private readonly IValidator<AddAgentToListingCaseDto> _addAgentToListingCaseValidator;
     private readonly IBlobStorageService _blobStorageService;
+    private readonly IValidator<SetCoverImageDto> _setCoverImageValidator;
 
     public ListingCaseService(
         IListingCaseRepository listingCaseRepository,
@@ -44,7 +45,8 @@ public class ListingCaseService : IListingCaseService
         IAgentRepository agentRepository,
         IPhotographyCompanyActivityLogRepository photographyCompanyActivityLogRepository,
         IValidator<AddAgentToListingCaseDto> addAgentToListingCaseValidator,
-        IBlobStorageService blobStorageService)
+        IBlobStorageService blobStorageService,
+        IValidator<SetCoverImageDto> setCoverImageValidator)
     {
         _listingCaseRepository = listingCaseRepository;
         _createListingCaseValidator = createListingCaseValidator;
@@ -59,6 +61,7 @@ public class ListingCaseService : IListingCaseService
         _photographyCompanyActivityLogRepository = photographyCompanyActivityLogRepository;
         _addAgentToListingCaseValidator = addAgentToListingCaseValidator;
         _blobStorageService = blobStorageService;
+        _setCoverImageValidator = setCoverImageValidator;
     }
 
     private MediaAssetDto ToMediaAssetDto(MediaAsset mediaAsset)
@@ -412,6 +415,54 @@ public class ListingCaseService : IListingCaseService
         {
             Id = agent.Id,
             ListingCaseId = id
+        };
+    }
+
+    public async Task<SetCoverImageResponseDto> SetCoverImageAsync(int listingCaseId, SetCoverImageDto dto, string userId, string? ipAddress)
+    {
+        ValidationResult validationResult = await _setCoverImageValidator.ValidateAsync(dto);
+        if (!validationResult.IsValid)
+        {
+            List<string> errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
+            throw new BadRequestException("Validation failed", errors);
+        }
+
+        ListingCase? listingCase = await _listingCaseRepository.GetListingCaseWithMediaAndAgentsAsync(listingCaseId);
+        if (listingCase == null)
+        {
+            throw new NotFoundException("The listing case does not exist!");
+        }
+
+        bool isAssignedAgent = listingCase.Agents.Any(a => a.Id == userId);
+        if (!isAssignedAgent)
+        {
+            throw new ForbiddenException("Only the assigned agent can set the cover image.");
+        }
+
+        MediaAsset? coverImage = listingCase.MediaAssets.FirstOrDefault(m => m.Id == dto.MediaId);
+        if (coverImage == null)
+        {
+            throw new BadRequestException("The media does not belong to this listing case.");
+        }
+
+        if (coverImage.MediaType != MediaType.Photos)
+        {
+            throw new BadRequestException("Only photos can be set as the cover image.");
+        }
+
+        foreach (MediaAsset mediaAsset in listingCase.MediaAssets)
+        {
+            mediaAsset.IsHero = mediaAsset.Id == coverImage.Id;
+        }
+
+        await _unitOfWork.SaveChangesAsync();
+
+        await LogListingCaseActivityAsync(ListingCaseActivityType.SetCoverImage, listingCaseId, userId,true, $"Set media {coverImage.Id} as cover image", ipAddress);
+
+        return new SetCoverImageResponseDto
+        {
+            ListingCaseId = listingCaseId,
+            MediaId = coverImage.Id
         };
     }
 }

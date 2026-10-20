@@ -106,4 +106,13 @@ public class ListingCaseRepository : IListingCaseRepository
             .Include(l => l.Agents)
             .FirstOrDefaultAsync(l => l.Id == id && !l.IsDeleted);
     }
+
+    public async Task<ListingCase?> GetListingCaseWithMediaAndAgentsAsync(int id)
+    {
+        return await _dbContext.ListingCases
+            .Include(l => l.MediaAssets.Where(m => !m.IsDeleted))
+            .Include(l => l.Agents)
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(l => l.Id == id && !l.IsDeleted);
+    }
 }
