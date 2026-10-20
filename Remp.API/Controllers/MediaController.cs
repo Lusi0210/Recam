@@ -36,5 +36,24 @@ namespace Remp.API.Controllers
             (Stream content, string contentType, string fileName) = await _mediaAssetService.DownloadMediaAssetAsync(id, userId);
             return File(content, contentType, fileName);
         }
+
+
+        /// <summary>
+        /// Delete a media file from a listing case
+        /// </summary>
+        /// <param name="id">Media asset id</param>
+        [HttpDelete("{id:int}")]
+        [Authorize(Roles = RoleNames.PhotographyCompany)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<object>>> DeleteMediaAsset(int id)
+        {
+            string userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            string? ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            await _mediaAssetService.DeleteMediaAssetAsync(id, userId, ipAddress);
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Delete media successful!"));
+        }
     }
 }

@@ -7,4 +7,5 @@ public interface IMediaAssetRepository
 {
     void Add(MediaAsset mediaAsset);
     Task<MediaAsset?> GetMediaAssetWithListingCaseAsync(int id);
+    Task<MediaAsset?> GetMediaAssetByIdAsync(int id);
 }

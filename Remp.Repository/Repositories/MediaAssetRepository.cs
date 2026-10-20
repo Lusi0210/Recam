@@ -28,4 +28,11 @@ public class MediaAssetRepository : IMediaAssetRepository
                 .ThenInclude(l => l.Agents)
             .FirstOrDefaultAsync(m => m.Id == id && !m.IsDeleted && !m.ListingCase.IsDeleted);
     }
+
+    public async Task<MediaAsset?> GetMediaAssetByIdAsync(int id)
+    {
+        return await _dbContext.MediaAssets
+            .Include(m => m.ListingCase)
+            .FirstOrDefaultAsync(m => m.Id == id && !m.IsDeleted && !m.ListingCase.IsDeleted);
+    }
 }

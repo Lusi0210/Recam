@@ -89,11 +89,11 @@ public class MediaAssetService : IMediaAssetService
         }
     }
 
-    private async Task LogAsync(int listingCaseId, string userId, string message, string? ipAddress)
+    private async Task LogAsync(ListingCaseActivityType action, int listingCaseId, string userId, string message, string? ipAddress)
     {
         ListingCaseHistory history = new ListingCaseHistory
         {
-            Action = ListingCaseActivityType.UploadMedia,
+            Action = action,
             ListingCaseId = listingCaseId,
             UserId = userId,
             Success = true,
@@ -108,7 +108,7 @@ public class MediaAssetService : IMediaAssetService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to write upload log for listing case {ListingCaseId}", listingCaseId);
+            _logger.LogError(ex, "Failed to write media log for listing case {ListingCaseId}", listingCaseId);
         }
     }
 
@@ -165,7 +165,7 @@ public class MediaAssetService : IMediaAssetService
             throw;
         }
 
-        await LogAsync(listingCaseId, userId, $"Uploaded {files.Count} {mediaType} file(s)", ipAddress);
+        await LogAsync(ListingCaseActivityType.UploadMedia,listingCaseId, userId, $"Uploaded {files.Count} {mediaType} file(s)", ipAddress);
 
         List<MediaAssetDto> result = new List<MediaAssetDto>();
         foreach (MediaAsset mediaAsset in mediaAssets)
@@ -253,5 +253,25 @@ public class MediaAssetService : IMediaAssetService
             await zipStream.DisposeAsync();
             throw;
         }
+    }
+
+    public async Task DeleteMediaAssetAsync(int mediaAssetId, string userId, string? ipAddress)
+    {
+        MediaAsset? mediaAsset = await _mediaAssetRepository.GetMediaAssetByIdAsync(mediaAssetId);
+        if (mediaAsset == null)
+        {
+            throw new NotFoundException("The media asset does not exist!");
+        }
+
+        if (mediaAsset.ListingCase.UserId != userId)
+        {
+            throw new ForbiddenException("You can only delete media from your own listing cases.");
+        }
+
+        mediaAsset.IsDeleted = true;
+        mediaAsset.IsHero = false;
+        await _unitOfWork.SaveChangesAsync();
+
+        await LogAsync(ListingCaseActivityType.DeleteMedia, mediaAsset.ListingCaseId, userId, $"Deleted media {mediaAssetId}", ipAddress);
     }
 }
