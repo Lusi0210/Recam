@@ -307,6 +307,10 @@ namespace Remp.DataAccess.Migrations
                     b.Property<int>("SaleCategory")
                         .HasColumnType("int");
 
+                    b.Property<string>("ShareableUrl")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
                     b.Property<string>("State")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -324,6 +328,10 @@ namespace Remp.DataAccess.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ShareableUrl")
+                        .IsUnique()
+                        .HasFilter("[ShareableUrl] IS NOT NULL");
 
                     b.HasIndex("UserId");
 

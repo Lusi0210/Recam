@@ -97,6 +97,8 @@ builder.Host.UseSerilog();
 builder.Services.Configure<AzureBlobSettings>(builder.Configuration.GetSection("AzureBlobSettings"));
 AzureBlobSettings blobSettings = builder.Configuration.GetSection("AzureBlobSettings").Get<AzureBlobSettings>()!;
 
+builder.Services.Configure<FrontendSettings>(builder.Configuration.GetSection("FrontendSettings"));
+
 builder.Services.AddSingleton<BlobServiceClient>(new BlobServiceClient(blobSettings.ConnectionString));
 builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
 

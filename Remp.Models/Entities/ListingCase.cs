@@ -21,6 +21,7 @@ public class ListingCase
     public double FloorArea {get;set;}
     public DateTime CreatedAt {get;set;}
     public bool IsDeleted {get;set;}
+    public string? ShareableUrl { get; set; }
     public PropertyType PropertyType {get;set;}
     public SaleCategory SaleCategory {get;set;}
     public ListcaseStatus ListcaseStatus {get;set;}

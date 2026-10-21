@@ -311,6 +311,22 @@ namespace Remp.API.Controllers
             List<GetFInalSelectionResponseDto> result = await _listingCaseService.GetFinalSelectionAsync(id,userId);
             return Ok(ApiResponse<List<GetFInalSelectionResponseDto>>.SuccessResponse(result,"Get selected media successful!"));
         }
+
+        [HttpPost("{id:int}/publish")]
+        [Authorize(Roles = RoleNames.PhotographyCompany)]
+        [ProducesResponseType(typeof(ApiResponse<PublishListingCaseResponseDto>),StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<PublishListingCaseResponseDto>>> PublishListingCase(int id)
+        {
+            string userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            string? ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            PublishListingCaseResponseDto result = await _listingCaseService.PublishListingCaseAsync(id,userId,ipAddress);
+            return Ok(ApiResponse<PublishListingCaseResponseDto>.SuccessResponse(result,"Publish listing case successful!"));
+        }
+        
     }
 
 }

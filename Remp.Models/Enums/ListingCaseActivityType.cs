@@ -9,5 +9,6 @@ public enum ListingCaseActivityType
     UploadMedia,
     SetCoverImage,
     DeleteMedia,
-    SelectMedia
+    SelectMedia,
+    Publish
 }

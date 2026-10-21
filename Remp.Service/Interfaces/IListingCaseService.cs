@@ -18,4 +18,5 @@ public interface IListingCaseService
     Task<SetCoverImageResponseDto> SetCoverImageAsync(int listingCaseId, SetCoverImageDto dto, string userId, string? ipAddress); 
     Task<AgentSelectMediaResponseDto> AgentSelectMediaAsync(string userId,int id,AgentSelectMediaDto dto,string? ipAddress);
     Task<List<GetFInalSelectionResponseDto>> GetFinalSelectionAsync(int id,string userId);
+    Task<PublishListingCaseResponseDto> PublishListingCaseAsync(int id, string userId, string? ipAddress);
 }

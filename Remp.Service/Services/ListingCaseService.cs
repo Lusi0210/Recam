@@ -2,8 +2,10 @@ using AutoMapper;
 using FluentValidation;
 using FluentValidation.Results;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Remp.Common.Exceptions;
 using Remp.Common.Responses;
+using Remp.Common.Settings;
 using Remp.Models.Constants;
 using Remp.Models.Documents;
 using Remp.Models.Entities;
@@ -32,6 +34,7 @@ public class ListingCaseService : IListingCaseService
     private readonly IBlobStorageService _blobStorageService;
     private readonly IValidator<SetCoverImageDto> _setCoverImageValidator;
     private readonly IValidator<AgentSelectMediaDto> _agentSelectMediaValidator;
+    private readonly FrontendSettings _frontendSettings;
 
     public ListingCaseService(
         IListingCaseRepository listingCaseRepository,
@@ -48,7 +51,8 @@ public class ListingCaseService : IListingCaseService
         IValidator<AddAgentToListingCaseDto> addAgentToListingCaseValidator,
         IBlobStorageService blobStorageService,
         IValidator<SetCoverImageDto> setCoverImageValidator,
-        IValidator<AgentSelectMediaDto> agentSelectMediaValidator)
+        IValidator<AgentSelectMediaDto> agentSelectMediaValidator,
+        IOptions<FrontendSettings> frontendOptions)
     {
         _listingCaseRepository = listingCaseRepository;
         _createListingCaseValidator = createListingCaseValidator;
@@ -64,7 +68,8 @@ public class ListingCaseService : IListingCaseService
         _addAgentToListingCaseValidator = addAgentToListingCaseValidator;
         _blobStorageService = blobStorageService;
         _setCoverImageValidator = setCoverImageValidator;
-        _agentSelectMediaValidator = agentSelectMediaValidator; 
+        _agentSelectMediaValidator = agentSelectMediaValidator;
+        _frontendSettings = frontendOptions.Value; 
     }
 
     private MediaAssetDto ToMediaAssetDto(MediaAsset mediaAsset)
@@ -543,5 +548,47 @@ public class ListingCaseService : IListingCaseService
         List<MediaAsset> result = listingCase.MediaAssets.Where(m => m.IsSelected && !m.IsDeleted).ToList();
         return _mapper.Map<List<GetFInalSelectionResponseDto>>(result);
 
+    }
+
+    public async Task<PublishListingCaseResponseDto> PublishListingCaseAsync(int id, string userId, string? ipAddress)
+    {
+        ListingCase? listingCase = await _listingCaseRepository.GetListingCaseAsync(id);
+        if (listingCase == null)
+        {
+            throw new NotFoundException("The listing case does not exist!");
+        }
+
+        if (listingCase.UserId != userId)
+        {
+            throw new ForbiddenException("You can only publish your own listing cases.");
+        }
+
+        if (listingCase.ListcaseStatus != ListcaseStatus.Delivered)
+        {
+            throw new BadRequestException("Only delivered listing cases can be published.");
+        }
+
+        if (!string.IsNullOrEmpty(listingCase.ShareableUrl))
+        {
+            return new PublishListingCaseResponseDto
+            {
+                ListingCaseId = id,
+                ShareableUrl = listingCase.ShareableUrl
+            };
+        }
+
+        string token = Guid.NewGuid().ToString("N");
+        string baseUrl = _frontendSettings.BaseUrl.TrimEnd('/');
+        listingCase.ShareableUrl = $"{baseUrl}/share/{token}";
+
+        await _unitOfWork.SaveChangesAsync();
+
+        await LogListingCaseActivityAsync(ListingCaseActivityType.Publish,id,userId,true,$"Published listing case with URL {listingCase.ShareableUrl}",ipAddress);
+    
+        return new PublishListingCaseResponseDto
+        {
+            ListingCaseId = id,
+            ShareableUrl = listingCase.ShareableUrl
+        };
     }
 }

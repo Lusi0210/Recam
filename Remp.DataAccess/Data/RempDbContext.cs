@@ -74,6 +74,14 @@ public class RempDbContext : IdentityDbContext<User>
                 "AgentPhotographyCompany",
                 r => r.HasOne<PhotographyCompany>().WithMany().HasForeignKey("PhotographyCompanyId"),
                 l => l.HasOne<Agent>().WithMany().HasForeignKey("AgentId"));
+
+        builder.Entity<ListingCase>()
+            .Property(l => l.ShareableUrl)
+            .HasMaxLength(255);
+
+        builder.Entity<ListingCase>()
+            .HasIndex(l => l.ShareableUrl)
+            .IsUnique();
     }
 
 }
