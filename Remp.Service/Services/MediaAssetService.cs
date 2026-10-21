@@ -1,10 +1,8 @@
-using System;
 using System.IO.Compression;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Remp.Common.Exceptions;
-using Remp.Models.Documents;
 using Remp.Models.Entities;
 using Remp.Models.Enums;
 using Remp.Repository.Common;
@@ -22,8 +20,8 @@ public class MediaAssetService : IMediaAssetService
     private readonly IBlobStorageService _blobStorageService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
-    private readonly IListingCaseHistoryRepository _listingCaseHistoryRepository;
     private readonly ILogger<MediaAssetService> _logger;
+    private readonly IActivityLogService _activityLogService;
 
     public MediaAssetService(
         IListingCaseRepository listingCaseRepository,
@@ -31,16 +29,16 @@ public class MediaAssetService : IMediaAssetService
         IBlobStorageService blobStorageService,
         IUnitOfWork unitOfWork,
         IMapper mapper,
-        IListingCaseHistoryRepository listingCaseHistoryRepository,
-        ILogger<MediaAssetService> logger)
+        ILogger<MediaAssetService> logger,
+        IActivityLogService activityLogService)
     {
         _listingCaseRepository = listingCaseRepository;
         _mediaAssetRepository = mediaAssetRepository;
         _blobStorageService = blobStorageService;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
-        _listingCaseHistoryRepository = listingCaseHistoryRepository;
         _logger = logger;
+        _activityLogService = activityLogService;
     }
 
     private static void ValidateFiles(MediaType mediaType, List<IFormFile> files)
@@ -86,29 +84,6 @@ public class MediaAssetService : IMediaAssetService
         if (errors.Count > 0)
         {
             throw new BadRequestException("Validation failed", errors);
-        }
-    }
-
-    private async Task LogAsync(ListingCaseActivityType action, int listingCaseId, string userId, string message, string? ipAddress)
-    {
-        ListingCaseHistory history = new ListingCaseHistory
-        {
-            Action = action,
-            ListingCaseId = listingCaseId,
-            UserId = userId,
-            Success = true,
-            Message = message,
-            IpAddress = ipAddress,
-            Timestamp = DateTime.UtcNow
-        };
-
-        try
-        {
-            await _listingCaseHistoryRepository.AddAsync(history);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to write media log for listing case {ListingCaseId}", listingCaseId);
         }
     }
 
@@ -165,7 +140,7 @@ public class MediaAssetService : IMediaAssetService
             throw;
         }
 
-        await LogAsync(ListingCaseActivityType.UploadMedia,listingCaseId, userId, $"Uploaded {files.Count} {mediaType} file(s)", ipAddress);
+        await _activityLogService.LogListingCaseAsync(ListingCaseActivityType.UploadMedia,listingCaseId, userId,true, $"Uploaded {files.Count} {mediaType} file(s)", ipAddress);
 
         List<MediaAssetDto> result = new List<MediaAssetDto>();
         foreach (MediaAsset mediaAsset in mediaAssets)
@@ -270,8 +245,9 @@ public class MediaAssetService : IMediaAssetService
 
         mediaAsset.IsDeleted = true;
         mediaAsset.IsHero = false;
+        mediaAsset.IsSelected = false;
         await _unitOfWork.SaveChangesAsync();
 
-        await LogAsync(ListingCaseActivityType.DeleteMedia, mediaAsset.ListingCaseId, userId, $"Deleted media {mediaAssetId}", ipAddress);
+        await _activityLogService.LogListingCaseAsync(ListingCaseActivityType.DeleteMedia, mediaAsset.ListingCaseId, userId,true, $"Deleted media {mediaAssetId}", ipAddress);
     }
 }

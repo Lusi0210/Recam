@@ -1,12 +1,10 @@
 using AutoMapper;
 using FluentValidation;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Remp.Common.Exceptions;
 using Remp.Common.Responses;
 using Remp.Common.Settings;
 using Remp.Models.Constants;
-using Remp.Models.Documents;
 using Remp.Models.Entities;
 using Remp.Models.Enums;
 using Remp.Models.Filters;
@@ -23,54 +21,48 @@ public class ListingCaseService : IListingCaseService
     private readonly IListingCaseRepository _listingCaseRepository;
     private readonly IValidator<CreateListingCaseDto> _createListingCaseValidator;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IListingCaseHistoryRepository _listingCaseHistoryRepository;
-    private readonly ILogger<ListingCaseService> _logger;
     private readonly IValidator<ListingCaseQueryDto> _listingCaseQueryValidator;
     private readonly IValidator<UpdateListingCaseDto> _updateListingCaseValidator;
     private readonly IValidator<UpdateListingCaseStatusDto> _updateListingCaseStatusValidator;
     private readonly IMapper _mapper;
     private readonly IAgentRepository _agentRepository;
-    private readonly IPhotographyCompanyActivityLogRepository _photographyCompanyActivityLogRepository;
     private readonly IValidator<AddAgentToListingCaseDto> _addAgentToListingCaseValidator;
     private readonly IBlobStorageService _blobStorageService;
     private readonly IValidator<SetCoverImageDto> _setCoverImageValidator;
     private readonly IValidator<AgentSelectMediaDto> _agentSelectMediaValidator;
     private readonly FrontendSettings _frontendSettings;
+    private readonly IActivityLogService _activityLogService;
 
     public ListingCaseService(
         IListingCaseRepository listingCaseRepository,
         IValidator<CreateListingCaseDto> createListingCaseValidator,
         IUnitOfWork unitOfWork,
-        IListingCaseHistoryRepository listingCaseHistoryRepository,
-        ILogger<ListingCaseService> logger,
         IValidator<ListingCaseQueryDto> listingCaseQueryValidator,
         IValidator<UpdateListingCaseDto> updateListingCaseValidator,
         IValidator<UpdateListingCaseStatusDto> updateListingCaseStatusValidator,
         IMapper mapper,
         IAgentRepository agentRepository,
-        IPhotographyCompanyActivityLogRepository photographyCompanyActivityLogRepository,
         IValidator<AddAgentToListingCaseDto> addAgentToListingCaseValidator,
         IBlobStorageService blobStorageService,
         IValidator<SetCoverImageDto> setCoverImageValidator,
         IValidator<AgentSelectMediaDto> agentSelectMediaValidator,
-        IOptions<FrontendSettings> frontendOptions)
+        IOptions<FrontendSettings> frontendOptions,
+        IActivityLogService activityLogService)
     {
         _listingCaseRepository = listingCaseRepository;
         _createListingCaseValidator = createListingCaseValidator;
         _unitOfWork = unitOfWork;
-        _listingCaseHistoryRepository = listingCaseHistoryRepository;
-        _logger = logger;
         _listingCaseQueryValidator = listingCaseQueryValidator;
         _updateListingCaseValidator = updateListingCaseValidator;
         _updateListingCaseStatusValidator = updateListingCaseStatusValidator;
         _mapper = mapper;
         _agentRepository = agentRepository;
-        _photographyCompanyActivityLogRepository = photographyCompanyActivityLogRepository;
         _addAgentToListingCaseValidator = addAgentToListingCaseValidator;
         _blobStorageService = blobStorageService;
         _setCoverImageValidator = setCoverImageValidator;
         _agentSelectMediaValidator = agentSelectMediaValidator;
-        _frontendSettings = frontendOptions.Value; 
+        _frontendSettings = frontendOptions.Value;
+        _activityLogService = activityLogService; 
     }
 
     private MediaAssetDto ToMediaAssetDto(MediaAsset mediaAsset)
@@ -79,52 +71,7 @@ public class ListingCaseService : IListingCaseService
         dto.MediaUrl = _blobStorageService.GetReadUrl(mediaAsset.MediaUrl);
         return dto;
     }
-
-    private async Task LogListingCaseActivityAsync(ListingCaseActivityType action,int id, string? userId,bool success,string? message,string? ipAddress)
-    {
-        ListingCaseHistory listingCaseHistory = new ListingCaseHistory
-        {
-          Action=action,
-          ListingCaseId=id,
-          UserId=userId,
-          Success=success,
-          Message=message,
-          IpAddress=ipAddress,
-          Timestamp = DateTime.UtcNow  
-        };
-
-        try
-        {
-            await _listingCaseHistoryRepository.AddAsync(listingCaseHistory);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to write listing case history for case {ListingCaseId}", id);
-        }
-    }
-
-    private async Task LogActivityAsync(PhotographyCompanyActivityType action,string email, string? userId, bool success, string message, string? ipAddress)
-    {
-        PhotographyCompanyActivityLog log = new PhotographyCompanyActivityLog
-        {
-            UserId = userId,
-            Email = email,
-            Action = action,
-            Success = success,
-            Message = message,
-            IpAddress = ipAddress,
-            Timestamp = DateTime.UtcNow
-        };
-
-        try
-        {
-            await _photographyCompanyActivityLogRepository.AddAsync(log);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to write photography company activity log for {Email}", email);
-        }
-    } 
+ 
 
     private static bool CanTransition(ListcaseStatus from, ListcaseStatus to)
     {
@@ -170,7 +117,7 @@ public class ListingCaseService : IListingCaseService
         await _unitOfWork.SaveChangesAsync();
 
         
-        await LogListingCaseActivityAsync(ListingCaseActivityType.Create,listingCase.Id,userId,true,"Create listingCase successful",ipAddress);
+        await _activityLogService.LogListingCaseAsync(ListingCaseActivityType.Create,listingCase.Id,userId,true,"Create listingCase successful",ipAddress);
         
         return listingCase.Id;
     }
@@ -227,7 +174,7 @@ public class ListingCaseService : IListingCaseService
         
         await _unitOfWork.SaveChangesAsync();
 
-        await LogListingCaseActivityAsync(ListingCaseActivityType.Update,id,userId,true,"Update listing case successful!",ipAddress);
+        await _activityLogService.LogListingCaseAsync(ListingCaseActivityType.Update,id,userId,true,"Update listing case successful!",ipAddress);
         
         return _mapper.Map<UpdateListingCaseResponseDto>(exist);
     }
@@ -253,7 +200,7 @@ public class ListingCaseService : IListingCaseService
 
         await _unitOfWork.SaveChangesAsync();
 
-        await LogListingCaseActivityAsync(ListingCaseActivityType.Delete,id,userId,true,"Delete listing case successful!",ipAddress);
+        await _activityLogService.LogListingCaseAsync(ListingCaseActivityType.Delete,id,userId,true,"Delete listing case successful!",ipAddress);
     }
 
 
@@ -304,7 +251,7 @@ public class ListingCaseService : IListingCaseService
         }
         listingCase.ListcaseStatus = dto.Status;
         await _unitOfWork.SaveChangesAsync();
-        await LogListingCaseActivityAsync(ListingCaseActivityType.StatusChange,id,userId,true,$"Status changed from {previousStatus} to {dto.Status}",ipAddress);
+        await _activityLogService.LogListingCaseAsync(ListingCaseActivityType.StatusChange,id,userId,true,$"Status changed from {previousStatus} to {dto.Status}",ipAddress);
 
 
         return new UpdateListingCaseStatusResponseDto{
@@ -398,7 +345,7 @@ public class ListingCaseService : IListingCaseService
         listingCase.Agents.Add(agent);
         await _unitOfWork.SaveChangesAsync();
 
-        await LogActivityAsync(PhotographyCompanyActivityType.AddAgentToListingCase,email,userId,true,$"Assigned agent {agent.Id} to listing case {id}",ipAddress);
+        await _activityLogService.LogPhotographyCompanyAsync(PhotographyCompanyActivityType.AddAgentToListingCase,email,userId,true,$"Assigned agent {agent.Id} to listing case {id}",ipAddress);
         
         return new AddAgentToListingCaseResponseDto
         {
@@ -441,7 +388,7 @@ public class ListingCaseService : IListingCaseService
 
         await _unitOfWork.SaveChangesAsync();
 
-        await LogListingCaseActivityAsync(ListingCaseActivityType.SetCoverImage, listingCaseId, userId,true, $"Set media {coverImage.Id} as cover image", ipAddress);
+        await _activityLogService.LogListingCaseAsync(ListingCaseActivityType.SetCoverImage, listingCaseId, userId,true, $"Set media {coverImage.Id} as cover image", ipAddress);
 
         return new SetCoverImageResponseDto
         {
@@ -491,7 +438,7 @@ public class ListingCaseService : IListingCaseService
         string message = dto.MediaAssetsId.Count == 0
             ? "Cleared all selected media"
             : $"Selected media: {string.Join(", ", dto.MediaAssetsId)}";
-        await LogListingCaseActivityAsync(ListingCaseActivityType.SelectMedia, id, userId,true, message, ipAddress);
+        await _activityLogService.LogListingCaseAsync(ListingCaseActivityType.SelectMedia, id, userId,true, message, ipAddress);
         return new AgentSelectMediaResponseDto
         {
             Id = id,
@@ -554,7 +501,7 @@ public class ListingCaseService : IListingCaseService
 
         await _unitOfWork.SaveChangesAsync();
 
-        await LogListingCaseActivityAsync(ListingCaseActivityType.Publish,id,userId,true,$"Published listing case with URL {listingCase.ShareableUrl}",ipAddress);
+        await _activityLogService.LogListingCaseAsync(ListingCaseActivityType.Publish,id,userId,true,$"Published listing case with URL {listingCase.ShareableUrl}",ipAddress);
     
         return new PublishListingCaseResponseDto
         {

@@ -1,16 +1,14 @@
-using System;
 using System.Security.Cryptography;
 using AutoMapper;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Logging;
 using Remp.Common.Exceptions;
 using Remp.Models.Constants;
-using Remp.Models.Documents;
 using Remp.Models.Entities;
 using Remp.Models.Enums;
 using Remp.Repository.Common;
 using Remp.Repository.Interfaces;
+using Remp.Service.Common;
 using Remp.Service.DTOs;
 using Remp.Service.Interfaces;
 
@@ -23,30 +21,28 @@ public class AgentService : IAgentService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IValidator<CreateAgentByPhotographyCompanyDto> _createAgentDtoValidator;
     private readonly UserManager<User> _userManager;
-    private readonly ILogger<AgentService> _logger;
-    private readonly IPhotographyCompanyActivityLogRepository _photographyCompanyActivityLogRepository;
     private readonly IEmailService _emailService;
     private readonly IMapper _mapper;
+    private readonly IActivityLogService _activityLogService;
     public AgentService(
         IAgentRepository agentRepository,
         IPhotographyCompanyRepository photographyCompanyRepository,
         IUnitOfWork unitOfWork,
         IValidator<CreateAgentByPhotographyCompanyDto> createAgentDtoValidator,
         UserManager<User> userManager,
-        ILogger<AgentService> logger,
-        IPhotographyCompanyActivityLogRepository photographyCompanyActivityLogRepository,
         IEmailService emailService,
-        IMapper mapper)
+        IMapper mapper,
+        IActivityLogService activityLogService
+        )
     {
         _agentRepository = agentRepository;
         _photographyCompanyRepository = photographyCompanyRepository;
         _unitOfWork = unitOfWork;
         _createAgentDtoValidator = createAgentDtoValidator;
         _userManager = userManager;
-        _logger = logger;
-        _photographyCompanyActivityLogRepository = photographyCompanyActivityLogRepository;
         _emailService = emailService;
         _mapper = mapper;
+        _activityLogService = activityLogService;
     }
 
     private static string GenerateRandomPassword(int length = 12)
@@ -78,29 +74,6 @@ public class AgentService : IAgentService
 
         return new string(chars.ToArray());
     }
-
-    private async Task LogActivityAsync(PhotographyCompanyActivityType action,string email, string? userId, bool success, string message, string? ipAddress)
-    {
-        PhotographyCompanyActivityLog log = new PhotographyCompanyActivityLog
-        {
-            UserId = userId,
-            Email = email,
-            Action = action,
-            Success = success,
-            Message = message,
-            IpAddress = ipAddress,
-            Timestamp = DateTime.UtcNow
-        };
-
-        try
-        {
-            await _photographyCompanyActivityLogRepository.AddAsync(log);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to write photography company activity log for {Email}", email);
-        }
-    } 
  
     public async Task<string> AddAgentToPhotographyCompanyAsync(string userId,AddAgentToPhotographyCompanyDto dto)
     {
@@ -129,12 +102,12 @@ public class AgentService : IAgentService
 
     public async Task<CreateAgentByPhotographyCompanyResponseDto> CreateAgentByPhotographyCompanyAsync(CreateAgentByPhotographyCompanyDto dto,string userId,string? ipAddress)
     {
-        await _createAgentDtoValidator.ValidateAndThrowAsync(dto);
+        await _createAgentDtoValidator.ValidateOrThrowAsync(dto);
 
         User? existingUser = await _userManager.FindByEmailAsync(dto.Email);
         if (existingUser!=null)
         {
-            await LogActivityAsync(PhotographyCompanyActivityType.CreateAgent,dto.Email,userId,false,"Email already registered",ipAddress);
+            await _activityLogService.LogPhotographyCompanyAsync(PhotographyCompanyActivityType.CreateAgent,dto.Email,userId,false,"Email already registered",ipAddress);
             throw new BadRequestException("Email is already registered");
         }
 
@@ -194,7 +167,7 @@ public class AgentService : IAgentService
 
         await _emailService.SendAsync(dto.Email, "Your RECAM account",$"Your account has been created.\nEmail: {dto.Email}\nPassword: {password}");
 
-        await LogActivityAsync(PhotographyCompanyActivityType.CreateAgent,dto.Email,userId,true,"Agent created successfully",ipAddress);
+        await _activityLogService.LogPhotographyCompanyAsync(PhotographyCompanyActivityType.CreateAgent,dto.Email,userId,true,"Agent created successfully",ipAddress);
 
         
         

@@ -130,6 +130,8 @@ builder.Services.AddScoped<ICaseContactService,CaseContactService>();
 builder.Services.AddScoped<IMediaAssetRepository, MediaAssetRepository>();
 builder.Services.AddScoped<IMediaAssetService, MediaAssetService>();
 
+builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
+
 var app = builder.Build();
 
 await DbSeeder.SeedAsync(app.Services, app.Environment.IsDevelopment());
