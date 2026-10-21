@@ -43,12 +43,8 @@ public class CaseContactService : ICaseContactService
             throw new NotFoundException("The listing case does not exist!");
         }
 
-        bool isOwner = listingCase.UserId == userId;
-        bool isAssignedAgent = listingCase.Agents.Any(a => a.Id == userId);
-        if (!isOwner && !isAssignedAgent)
-        {
-            throw new ForbiddenException("You do not have permission to add contacts to this listing case.");
-        }
+        listingCase.EnsureOwnerOrAssignedAgent(userId, "You do not have permission to add contacts to this listing case.");
+        
 
         
         CaseContact caseContact = _mapper.Map<CaseContact>(dto);

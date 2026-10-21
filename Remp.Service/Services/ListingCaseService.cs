@@ -165,10 +165,8 @@ public class ListingCaseService : IListingCaseService
             throw new NotFoundException("The listing case does not exist!");
         }
 
-        if (exist.UserId != userId)
-        {
-            throw new ForbiddenException("You can only update your own listing cases.");
-        }
+        exist.EnsureOwner(userId, "You can only update your own listing cases.");
+        
 
         _mapper.Map(dto, exist);
         
@@ -187,10 +185,8 @@ public class ListingCaseService : IListingCaseService
             throw new NotFoundException("The listing case does not exist!");
         }
 
-        if (listingCase.UserId != userId)
-        {
-            throw new ForbiddenException("You can only delete your own listing cases.");
-        }
+        listingCase.EnsureOwner(userId, "You can only delete your own listing cases.");
+        
 
         listingCase.IsDeleted = true;
         foreach (MediaAsset mediaAsset in listingCase.MediaAssets)
@@ -212,13 +208,8 @@ public class ListingCaseService : IListingCaseService
             throw new NotFoundException("The listing case does not exist!");
         }
 
-        bool isOwner = listingCase.UserId == userId;
-        bool isAssignedAgent = listingCase.Agents.Any(a => a.Id == userId);
-
-        if(!isOwner && !isAssignedAgent)
-        {
-            throw new ForbiddenException("You can only get the listing case details assigned to you");
-        }
+        listingCase.EnsureOwnerOrAssignedAgent(userId, "You can only get the listing case details assigned to you");
+        
 
         GetListingCaseDetailsResponseDto result = _mapper.Map<GetListingCaseDetailsResponseDto>(listingCase);
         foreach (MediaAssetDto media in result.MediaAssets)
@@ -240,10 +231,8 @@ public class ListingCaseService : IListingCaseService
         }
         ListcaseStatus previousStatus = listingCase.ListcaseStatus;
 
-        if(listingCase.UserId != userId)
-        {
-            throw new ForbiddenException("The listing case only can be updated by owner!");
-        }
+        listingCase.EnsureOwner(userId, "The listing case only can be updated by owner!");
+        
 
         if (!CanTransition(previousStatus, dto.Status))
         {
@@ -269,13 +258,8 @@ public class ListingCaseService : IListingCaseService
             throw new NotFoundException("The listing case does not exist!");
         }
 
-        bool isOwner = listingCase.UserId == userId;
-        bool isAssignedAgent = listingCase.Agents.Any(a => a.Id == userId);
-
-        if (!isOwner && !isAssignedAgent)
-        {
-            throw new ForbiddenException("You do not have permission to view this listing case's media.");
-        }
+        listingCase.EnsureOwnerOrAssignedAgent(userId, "You do not have permission to view this listing case's media.");
+        
 
 
         List<GetListingCaseMediaAssetsResponseDto> result = listingCase.MediaAssets
@@ -298,13 +282,8 @@ public class ListingCaseService : IListingCaseService
             throw new NotFoundException("The listing case does not exist!");
         }
 
-        bool isOwner = listingCase.UserId == userId;
-        bool isAssignedAgent = listingCase.Agents.Any(a => a.Id == userId);
-
-        if (!isOwner && !isAssignedAgent)
-        {
-            throw new ForbiddenException("You do not have permission to view this listing case's case contacts.");
-        }
+        listingCase.EnsureOwnerOrAssignedAgent(userId, "You do not have permission to view this listing case's case contacts.");
+        
 
         List<GetCaseContactsResponseDto> responseDtos = _mapper.Map<List<GetCaseContactsResponseDto>>(listingCase.CaseContacts);
 
@@ -321,10 +300,8 @@ public class ListingCaseService : IListingCaseService
             throw new NotFoundException("The listing case does not exist!");
         }
 
-        if(listingCase.UserId != userId)
-        {
-            throw new ForbiddenException("You can only add agent to your listing case!");
-        }
+        listingCase.EnsureOwner(userId, "You can only add agent to your listing case!");
+        
 
         Agent? agent = await _agentRepository.GetAgentByIdAsync(dto.Id);
         if (agent == null)
@@ -364,11 +341,8 @@ public class ListingCaseService : IListingCaseService
             throw new NotFoundException("The listing case does not exist!");
         }
 
-        bool isAssignedAgent = listingCase.Agents.Any(a => a.Id == userId);
-        if (!isAssignedAgent)
-        {
-            throw new ForbiddenException("Only the assigned agent can set the cover image.");
-        }
+        listingCase.EnsureAssignedAgent(userId, "Only the assigned agent can set the cover image.");
+        
 
         MediaAsset? coverImage = listingCase.MediaAssets.FirstOrDefault(m => m.Id == dto.MediaId);
         if (coverImage == null)
@@ -407,11 +381,8 @@ public class ListingCaseService : IListingCaseService
             throw new NotFoundException("The listing case does not exist!");
         }
 
-        bool isAssignedAgent = listingCase.Agents.Any(a => a.Id == userId);
-        if (!isAssignedAgent)
-        {
-            throw new ForbiddenException("Only the assigned agent can select the media.");
-        }
+        listingCase.EnsureAssignedAgent(userId, "Only the assigned agent can select the media.");
+        
 
         List<int> invalidIds = dto.MediaAssetsId
             .Where(mediaId => !listingCase.MediaAssets.Any(m => m.Id == mediaId))
@@ -455,13 +426,8 @@ public class ListingCaseService : IListingCaseService
             throw new NotFoundException("The listing case does not exist!");
         }
 
-        bool isOwner = listingCase.UserId == userId;
-        bool isAssignedAgent = listingCase.Agents.Any(a => a.Id == userId);
-
-        if (!isOwner && !isAssignedAgent)
-        {
-            throw new ForbiddenException("You do not have permission to view this listing case's media.");
-        }
+        listingCase.EnsureOwnerOrAssignedAgent(userId, "You do not have permission to view this listing case's media.");
+        
 
         List<MediaAsset> result = listingCase.MediaAssets.Where(m => m.IsSelected && !m.IsDeleted).ToList();
         return _mapper.Map<List<GetFInalSelectionResponseDto>>(result);
@@ -476,10 +442,8 @@ public class ListingCaseService : IListingCaseService
             throw new NotFoundException("The listing case does not exist!");
         }
 
-        if (listingCase.UserId != userId)
-        {
-            throw new ForbiddenException("You can only publish your own listing cases.");
-        }
+        listingCase.EnsureOwner(userId, "You can only publish your own listing cases.");
+        
 
         if (listingCase.ListcaseStatus != ListcaseStatus.Delivered)
         {

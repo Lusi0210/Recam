@@ -95,10 +95,8 @@ public class MediaAssetService : IMediaAssetService
             throw new NotFoundException("The listing case does not exist!");
         }
 
-        if (listingCase.UserId != userId)
-        {
-            throw new ForbiddenException("You can only upload media to your own listing cases.");
-        }
+        listingCase.EnsureOwner(userId, "You can only upload media to your own listing cases.");
+        
 
         ValidateFiles(mediaType, files);
 
@@ -161,12 +159,8 @@ public class MediaAssetService : IMediaAssetService
             throw new NotFoundException("The media asset does not exist!");
         }
 
-        bool isOwner = mediaAsset.ListingCase.UserId == userId;
-        bool isAssignedAgent = mediaAsset.ListingCase.Agents.Any(a => a.Id == userId);
-        if (!isOwner && !isAssignedAgent)
-        {
-            throw new ForbiddenException("You do not have permission to download this media.");
-        }
+        mediaAsset.ListingCase.EnsureOwnerOrAssignedAgent(userId, "You do not have permission to download this media.");
+
 
         return await _blobStorageService.DownloadFileAsync(mediaAsset.MediaUrl);
     }
@@ -179,12 +173,8 @@ public class MediaAssetService : IMediaAssetService
             throw new NotFoundException("The listing case does not exist!");
         }
 
-        bool isOwner = listingCase.UserId == userId;
-        bool isAssignedAgent = listingCase.Agents.Any(a => a.Id == userId);
-        if (!isOwner && !isAssignedAgent)
-        {
-            throw new ForbiddenException("You do not have permission to download this listing case's media.");
-        }
+        listingCase.EnsureOwnerOrAssignedAgent(userId, "You do not have permission to download this listing case's media.");
+        
 
         if (listingCase.MediaAssets.Count == 0)
         {
@@ -238,10 +228,8 @@ public class MediaAssetService : IMediaAssetService
             throw new NotFoundException("The media asset does not exist!");
         }
 
-        if (mediaAsset.ListingCase.UserId != userId)
-        {
-            throw new ForbiddenException("You can only delete media from your own listing cases.");
-        }
+        mediaAsset.ListingCase.EnsureOwner(userId, "You can only delete media from your own listing cases.");
+        
 
         mediaAsset.IsDeleted = true;
         mediaAsset.IsHero = false;
