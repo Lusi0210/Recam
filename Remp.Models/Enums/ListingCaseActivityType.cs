@@ -8,5 +8,6 @@ public enum ListingCaseActivityType
     StatusChange,
     UploadMedia,
     SetCoverImage,
-    DeleteMedia
+    DeleteMedia,
+    SelectMedia
 }

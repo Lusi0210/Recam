@@ -277,6 +277,27 @@ namespace Remp.API.Controllers
             SetCoverImageResponseDto result = await _listingCaseService.SetCoverImageAsync(id, dto, userId, ipAddress);
             return Ok(ApiResponse<SetCoverImageResponseDto>.SuccessResponse(result, "Set cover image successful!"));
         }
+
+        /// <summary>
+        /// Agent select the media assets
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="dto"></param>
+        /// <returns>The selected media ids and listing case id</returns>
+        [HttpPut("{id:int}/selected-media")]
+        [Authorize(Roles = RoleNames.Agent)]
+        [ProducesResponseType(typeof(ApiResponse<AgentSelectMediaResponseDto>),StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<AgentSelectMediaResponseDto>>> AgentSelectMedia(int id,AgentSelectMediaDto dto)
+        {
+            string userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            string? ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            AgentSelectMediaResponseDto result = await _listingCaseService.AgentSelectMediaAsync(userId,id,dto,ipAddress);
+            return Ok(ApiResponse<AgentSelectMediaResponseDto>.SuccessResponse(result,"Select media successful!"));
+        }
     }
 
 }

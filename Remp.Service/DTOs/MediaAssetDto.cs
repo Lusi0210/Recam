@@ -11,4 +11,5 @@ public class MediaAssetDto
     public DateTime UploadedAt {get;set;}
     public string UserId {get;set;} = null!;
     public bool IsHero { get; set; }
+    public bool IsSelected {get;set;}
 }

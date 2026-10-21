@@ -31,6 +31,7 @@ public class ListingCaseService : IListingCaseService
     private readonly IValidator<AddAgentToListingCaseDto> _addAgentToListingCaseValidator;
     private readonly IBlobStorageService _blobStorageService;
     private readonly IValidator<SetCoverImageDto> _setCoverImageValidator;
+    private readonly IValidator<AgentSelectMediaDto> _agentSelectMediaValidator;
 
     public ListingCaseService(
         IListingCaseRepository listingCaseRepository,
@@ -46,7 +47,8 @@ public class ListingCaseService : IListingCaseService
         IPhotographyCompanyActivityLogRepository photographyCompanyActivityLogRepository,
         IValidator<AddAgentToListingCaseDto> addAgentToListingCaseValidator,
         IBlobStorageService blobStorageService,
-        IValidator<SetCoverImageDto> setCoverImageValidator)
+        IValidator<SetCoverImageDto> setCoverImageValidator,
+        IValidator<AgentSelectMediaDto> agentSelectMediaValidator)
     {
         _listingCaseRepository = listingCaseRepository;
         _createListingCaseValidator = createListingCaseValidator;
@@ -62,6 +64,7 @@ public class ListingCaseService : IListingCaseService
         _addAgentToListingCaseValidator = addAgentToListingCaseValidator;
         _blobStorageService = blobStorageService;
         _setCoverImageValidator = setCoverImageValidator;
+        _agentSelectMediaValidator = agentSelectMediaValidator; 
     }
 
     private MediaAssetDto ToMediaAssetDto(MediaAsset mediaAsset)
@@ -463,6 +466,60 @@ public class ListingCaseService : IListingCaseService
         {
             ListingCaseId = listingCaseId,
             MediaId = coverImage.Id
+        };
+    }
+
+    public async Task<AgentSelectMediaResponseDto> AgentSelectMediaAsync(string userId,int id,AgentSelectMediaDto dto,string? ipAddress)
+    {
+        ValidationResult validationResult = await _agentSelectMediaValidator.ValidateAsync(dto);
+        if (!validationResult.IsValid)
+        {
+            List<string> errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
+            throw new BadRequestException("Validation failed", errors);
+        }
+
+        ListingCase? listingCase = await _listingCaseRepository.GetListingCaseWithMediaAndAgentsAsync(id);
+        if (listingCase == null)
+        {
+            throw new NotFoundException("The listing case does not exist!");
+        }
+
+        bool isAssignedAgent = listingCase.Agents.Any(a => a.Id == userId);
+        if (!isAssignedAgent)
+        {
+            throw new ForbiddenException("Only the assigned agent can select the media.");
+        }
+
+        List<int> invalidIds = dto.MediaAssetsId
+            .Where(mediaId => !listingCase.MediaAssets.Any(m => m.Id == mediaId))
+            .ToList();
+        if (invalidIds.Count > 0)
+        {
+            throw new BadRequestException($"Media {string.Join(", ", invalidIds)} do not belong to this listing case.");
+        }
+
+        bool hasNonPhoto = listingCase.MediaAssets.Any(m => dto.MediaAssetsId.Contains(m.Id) && m.MediaType != MediaType.Photos);
+        if (hasNonPhoto)
+        {
+            throw new BadRequestException("Only photos can be selected.");
+        }
+
+        foreach (MediaAsset mediaAsset in listingCase.MediaAssets)
+        {
+            mediaAsset.IsSelected = dto.MediaAssetsId.Contains(mediaAsset.Id);
+        }
+
+
+        await _unitOfWork.SaveChangesAsync();
+
+        string message = dto.MediaAssetsId.Count == 0
+            ? "Cleared all selected media"
+            : $"Selected media: {string.Join(", ", dto.MediaAssetsId)}";
+        await LogListingCaseActivityAsync(ListingCaseActivityType.SelectMedia, id, userId,true, message, ipAddress);
+        return new AgentSelectMediaResponseDto
+        {
+            Id = id,
+            MediaAssetsId = dto.MediaAssetsId
         };
     }
 }
