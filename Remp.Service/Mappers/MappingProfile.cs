@@ -26,5 +26,6 @@ public class MappingProfile : Profile
         CreateMap<Agent,GetAgentResponseDto>()
             .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.User.Email));
         CreateMap<AddCaseContactDto,CaseContact>();
+        CreateMap<MediaAsset,GetFInalSelectionResponseDto>();
     }
 }

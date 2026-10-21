@@ -298,6 +298,19 @@ namespace Remp.API.Controllers
             AgentSelectMediaResponseDto result = await _listingCaseService.AgentSelectMediaAsync(userId,id,dto,ipAddress);
             return Ok(ApiResponse<AgentSelectMediaResponseDto>.SuccessResponse(result,"Select media successful!"));
         }
+
+        [HttpGet("{id:int}/final-selection")]
+        [Authorize(Roles = $"{RoleNames.Agent},{RoleNames.PhotographyCompany}")]
+        [ProducesResponseType(typeof(ApiResponse<List<GetFInalSelectionResponseDto>>),StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<List<GetFInalSelectionResponseDto>>> GetFinalSelectedMedia(int id)
+        {
+            string userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            List<GetFInalSelectionResponseDto> result = await _listingCaseService.GetFinalSelectionAsync(id,userId);
+            return Ok(ApiResponse<List<GetFInalSelectionResponseDto>>.SuccessResponse(result,"Get selected media successful!"));
+        }
     }
 
 }

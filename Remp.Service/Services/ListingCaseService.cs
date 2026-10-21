@@ -522,4 +522,26 @@ public class ListingCaseService : IListingCaseService
             MediaAssetsId = dto.MediaAssetsId
         };
     }
+
+
+    public async Task<List<GetFInalSelectionResponseDto>> GetFinalSelectionAsync(int id,string userId)
+    {
+        ListingCase? listingCase = await _listingCaseRepository.GetListingCaseWithMediaAndAgentsAsync(id);
+        if (listingCase == null)
+        {
+            throw new NotFoundException("The listing case does not exist!");
+        }
+
+        bool isOwner = listingCase.UserId == userId;
+        bool isAssignedAgent = listingCase.Agents.Any(a => a.Id == userId);
+
+        if (!isOwner && !isAssignedAgent)
+        {
+            throw new ForbiddenException("You do not have permission to view this listing case's media.");
+        }
+
+        List<MediaAsset> result = listingCase.MediaAssets.Where(m => m.IsSelected && !m.IsDeleted).ToList();
+        return _mapper.Map<List<GetFInalSelectionResponseDto>>(result);
+
+    }
 }
