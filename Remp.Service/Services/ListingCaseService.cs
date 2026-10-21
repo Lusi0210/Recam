@@ -1,6 +1,5 @@
 using AutoMapper;
 using FluentValidation;
-using FluentValidation.Results;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Remp.Common.Exceptions;
@@ -13,6 +12,7 @@ using Remp.Models.Enums;
 using Remp.Models.Filters;
 using Remp.Repository.Common;
 using Remp.Repository.Interfaces;
+using Remp.Service.Common;
 using Remp.Service.DTOs;
 using Remp.Service.Interfaces;
 
@@ -142,12 +142,7 @@ public class ListingCaseService : IListingCaseService
 
     public async Task<int> CreateListingCaseAsync(CreateListingCaseDto dto,string userId,string? ipAddress)
     {
-        ValidationResult validationResult = await _createListingCaseValidator.ValidateAsync(dto);
-        if (!validationResult.IsValid)
-        {
-            List<string> errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
-            throw new BadRequestException("Validation failed",errors);
-        }
+        await _createListingCaseValidator.ValidateOrThrowAsync(dto);
 
         ListingCase listingCase = new ListingCase
         {
@@ -182,12 +177,8 @@ public class ListingCaseService : IListingCaseService
 
     public async Task<PagedResult<GetListingCaseResponseDto>> GetAllListingCaseAsync(string role,string userId,ListingCaseQueryDto query)
     {
-        ValidationResult validationResult = await _listingCaseQueryValidator.ValidateAsync(query);
-        if (!validationResult.IsValid)
-        {
-            List<string> errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
-            throw new BadRequestException("Validation failed", errors);
-        }
+        await _listingCaseQueryValidator.ValidateOrThrowAsync(query);
+        
 
         ListingCaseFilter filter = _mapper.Map<ListingCaseFilter>(query);
         PagedResult<ListingCase> listingCases;
@@ -219,12 +210,7 @@ public class ListingCaseService : IListingCaseService
 
     public async Task<UpdateListingCaseResponseDto> UpdateListingCaseAsync(int id,UpdateListingCaseDto dto,string userId,string? ipAddress)
     {
-        ValidationResult validationResult = await _updateListingCaseValidator.ValidateAsync(dto);
-        if (!validationResult.IsValid)
-        {
-            List<string> errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
-            throw new BadRequestException("Validation failed",errors);
-        }
+        await _updateListingCaseValidator.ValidateOrThrowAsync(dto);
 
         ListingCase? exist = await _listingCaseRepository.GetListingCaseAsync(id);
         if (exist == null)
@@ -298,12 +284,8 @@ public class ListingCaseService : IListingCaseService
 
     public async Task<UpdateListingCaseStatusResponseDto> UpdateListingCaseStatusByIdAsync(UpdateListingCaseStatusDto dto,int id,string userId,string? ipAddress)
     {
-        ValidationResult validationResult = await _updateListingCaseStatusValidator.ValidateAsync(dto);
-        if (!validationResult.IsValid)
-        {
-            List<string> errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
-            throw new BadRequestException("Validation failed",errors);
-        }
+        await _updateListingCaseStatusValidator.ValidateOrThrowAsync(dto);
+
         ListingCase? listingCase = await _listingCaseRepository.GetListingCaseAsync(id);
         if(listingCase == null)
         {
@@ -384,12 +366,8 @@ public class ListingCaseService : IListingCaseService
 
     public async Task<AddAgentToListingCaseResponseDto> AddAgentToListingCaseAsync(AddAgentToListingCaseDto dto,string userId,int id,string? ipAddress,string email)
     {
-        ValidationResult validationResult = await _addAgentToListingCaseValidator.ValidateAsync(dto);
-        if (!validationResult.IsValid)
-        {
-            List<string> errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
-            throw new BadRequestException("Validation failed",errors);
-        }
+        await _addAgentToListingCaseValidator.ValidateOrThrowAsync(dto);
+
         ListingCase? listingCase = await _listingCaseRepository.GetListingCaseWithAgentAsync(id);
         if(listingCase == null)
         {
@@ -431,12 +409,7 @@ public class ListingCaseService : IListingCaseService
 
     public async Task<SetCoverImageResponseDto> SetCoverImageAsync(int listingCaseId, SetCoverImageDto dto, string userId, string? ipAddress)
     {
-        ValidationResult validationResult = await _setCoverImageValidator.ValidateAsync(dto);
-        if (!validationResult.IsValid)
-        {
-            List<string> errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
-            throw new BadRequestException("Validation failed", errors);
-        }
+        await _setCoverImageValidator.ValidateOrThrowAsync(dto);
 
         ListingCase? listingCase = await _listingCaseRepository.GetListingCaseWithMediaAndAgentsAsync(listingCaseId);
         if (listingCase == null)
@@ -479,12 +452,7 @@ public class ListingCaseService : IListingCaseService
 
     public async Task<AgentSelectMediaResponseDto> AgentSelectMediaAsync(string userId,int id,AgentSelectMediaDto dto,string? ipAddress)
     {
-        ValidationResult validationResult = await _agentSelectMediaValidator.ValidateAsync(dto);
-        if (!validationResult.IsValid)
-        {
-            List<string> errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
-            throw new BadRequestException("Validation failed", errors);
-        }
+        await _agentSelectMediaValidator.ValidateOrThrowAsync(dto);
 
         ListingCase? listingCase = await _listingCaseRepository.GetListingCaseWithMediaAndAgentsAsync(id);
         if (listingCase == null)

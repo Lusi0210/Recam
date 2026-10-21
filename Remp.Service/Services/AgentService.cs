@@ -2,7 +2,6 @@ using System;
 using System.Security.Cryptography;
 using AutoMapper;
 using FluentValidation;
-using FluentValidation.Results;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Remp.Common.Exceptions;
@@ -130,12 +129,7 @@ public class AgentService : IAgentService
 
     public async Task<CreateAgentByPhotographyCompanyResponseDto> CreateAgentByPhotographyCompanyAsync(CreateAgentByPhotographyCompanyDto dto,string userId,string? ipAddress)
     {
-        ValidationResult validationResult = await _createAgentDtoValidator.ValidateAsync(dto);
-        if (!validationResult.IsValid)
-        {
-            List<string> errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
-            throw new BadRequestException("Validation failed", errors);
-        }
+        await _createAgentDtoValidator.ValidateAndThrowAsync(dto);
 
         User? existingUser = await _userManager.FindByEmailAsync(dto.Email);
         if (existingUser!=null)

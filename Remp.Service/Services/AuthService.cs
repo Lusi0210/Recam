@@ -5,13 +5,13 @@ using Remp.Service.Interfaces;
 using Remp.Service.DTOs;
 using Remp.Common.Exceptions;
 using FluentValidation;
-using FluentValidation.Results;
 using Microsoft.Extensions.Logging;
 using Remp.Repository.Interfaces;
 using Remp.Models.Documents;
 using Remp.Models.Enums;
 using Remp.Repository.Common;
 using Remp.Models.Constants;
+using Remp.Service.Common;
 
 
 namespace Remp.Service.Services;
@@ -74,12 +74,7 @@ public class AuthService : IAuthService
 
     public async Task<LoginResponseDto> LoginAsync(LoginRequestDto dto,string? ipAddress)
     {
-        ValidationResult validationResult = await _loginRequestValidator.ValidateAsync(dto);
-        if (!validationResult.IsValid)
-        {
-            List<string> errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
-            throw new BadRequestException("Validation failed", errors);
-        }
+        await _loginRequestValidator.ValidateOrThrowAsync(dto);
 
         User? user = await _userManager.FindByEmailAsync(dto.Email);
         if (user == null)
@@ -128,12 +123,7 @@ public class AuthService : IAuthService
 
     public async Task<RegisterResponseDto> RegisterAsync(RegisterRequestDto dto,string? ipAddress)
     {
-        ValidationResult validationResult = await _registerRequestValidator.ValidateAsync(dto);
-        if (!validationResult.IsValid)
-        {
-            List<string> errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
-            throw new BadRequestException("Validation failed", errors);
-        }
+        await _registerRequestValidator.ValidateOrThrowAsync(dto);
 
         User? existingUser = await _userManager.FindByEmailAsync(dto.Email);
         if (existingUser!=null)
@@ -198,12 +188,7 @@ public class AuthService : IAuthService
 
     public async Task<ChangePasswordResponseDto> ChangePasswordAsync(ChangePasswordDto dto, string userId, string? ipAddress)
     {
-        ValidationResult validationResult = await _changePasswordValidator.ValidateAsync(dto);
-        if (!validationResult.IsValid)
-        {
-            List<string> errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
-            throw new BadRequestException("Validation failed", errors);
-        }
+        await _changePasswordValidator.ValidateOrThrowAsync(dto);
 
         User? user = await _userManager.FindByIdAsync(userId);
 

@@ -1,11 +1,11 @@
 using System;
 using AutoMapper;
 using FluentValidation;
-using FluentValidation.Results;
 using Remp.Common.Exceptions;
 using Remp.Models.Entities;
 using Remp.Repository.Common;
 using Remp.Repository.Interfaces;
+using Remp.Service.Common;
 using Remp.Service.DTOs;
 using Remp.Service.Interfaces;
 
@@ -34,12 +34,7 @@ public class CaseContactService : ICaseContactService
 
     public async Task<int> AddCaseContactToListingCaseAsync(int id,AddCaseContactDto dto,string userId)
     {
-        ValidationResult validationResult = await _addCaseContactValidator.ValidateAsync(dto);
-        if (!validationResult.IsValid)
-        {
-            List<string> errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
-            throw new BadRequestException("Validation failed", errors);
-        }
+        await _addCaseContactValidator.ValidateOrThrowAsync(dto);
 
         ListingCase? listingCase = await _listingCaseRepository.GetListingCaseWithAgentAsync(id);
 

@@ -1,12 +1,12 @@
 using AutoMapper;
 using FluentValidation;
-using FluentValidation.Results;
 using Remp.Common.Exceptions;
 using Remp.Common.Responses;
 using Remp.Models.Constants;
 using Remp.Models.Entities;
 using Remp.Models.Projections;
 using Remp.Repository.Interfaces;
+using Remp.Service.Common;
 using Remp.Service.DTOs;
 using Remp.Service.Interfaces;
 
@@ -27,12 +27,7 @@ public class UserService : IUserService
 
     public async Task<PagedResult<UserDto>> GetAllUsersAsync(PaginationQueryDto query)
     {
-        ValidationResult validationResult = await _paginationValidator.ValidateAsync(query);
-        if (!validationResult.IsValid)
-        {
-            List<string> errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
-            throw new BadRequestException("Validation failed", errors);
-        }
+        await _paginationValidator.ValidateOrThrowAsync(query);
 
 
         PagedResult<UserWithRole> pagedUsers =
