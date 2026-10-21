@@ -28,8 +28,6 @@ public class ListingCaseService : IListingCaseService
     private readonly IAgentRepository _agentRepository;
     private readonly IValidator<AddAgentToListingCaseDto> _addAgentToListingCaseValidator;
     private readonly IBlobStorageService _blobStorageService;
-    private readonly IValidator<SetCoverImageDto> _setCoverImageValidator;
-    private readonly IValidator<AgentSelectMediaDto> _agentSelectMediaValidator;
     private readonly FrontendSettings _frontendSettings;
     private readonly IActivityLogService _activityLogService;
 
@@ -44,8 +42,6 @@ public class ListingCaseService : IListingCaseService
         IAgentRepository agentRepository,
         IValidator<AddAgentToListingCaseDto> addAgentToListingCaseValidator,
         IBlobStorageService blobStorageService,
-        IValidator<SetCoverImageDto> setCoverImageValidator,
-        IValidator<AgentSelectMediaDto> agentSelectMediaValidator,
         IOptions<FrontendSettings> frontendOptions,
         IActivityLogService activityLogService)
     {
@@ -59,19 +55,9 @@ public class ListingCaseService : IListingCaseService
         _agentRepository = agentRepository;
         _addAgentToListingCaseValidator = addAgentToListingCaseValidator;
         _blobStorageService = blobStorageService;
-        _setCoverImageValidator = setCoverImageValidator;
-        _agentSelectMediaValidator = agentSelectMediaValidator;
         _frontendSettings = frontendOptions.Value;
         _activityLogService = activityLogService; 
     }
-
-    private MediaAssetDto ToMediaAssetDto(MediaAsset mediaAsset)
-    {
-        MediaAssetDto dto = _mapper.Map<MediaAssetDto>(mediaAsset);
-        dto.MediaUrl = _blobStorageService.GetReadUrl(mediaAsset.MediaUrl);
-        return dto;
-    }
- 
 
     private static bool CanTransition(ListcaseStatus from, ListcaseStatus to)
     {
@@ -250,45 +236,6 @@ public class ListingCaseService : IListingCaseService
         };
     }
 
-    public async Task<List<GetListingCaseMediaAssetsResponseDto>> GetListingCaseMediaAssetsAsync(int id,string userId)
-    {
-        ListingCase? listingCase = await _listingCaseRepository.GetListingCaseDetailsByIdAsync(id);
-        if(listingCase == null)
-        {
-            throw new NotFoundException("The listing case does not exist!");
-        }
-
-        listingCase.EnsureOwnerOrAssignedAgent(userId, "You do not have permission to view this listing case's media.");
-        
-
-
-        List<GetListingCaseMediaAssetsResponseDto> result = listingCase.MediaAssets
-            .GroupBy(m => m.MediaType)
-            .Select(group => new GetListingCaseMediaAssetsResponseDto
-            {
-                MediaType = group.Key,
-                MediaAssets = group.Select(m => ToMediaAssetDto(m)).ToList()
-            })
-            .ToList();
-        
-        return result;
-    }
-
-    public async Task<List<GetCaseContactsResponseDto>> GetCaseContactsByListingCaseIdAsync(int id,string userId)
-    {
-        ListingCase? listingCase = await _listingCaseRepository.GetListingCaseWithContactsAsync(id);
-        if(listingCase == null)
-        {
-            throw new NotFoundException("The listing case does not exist!");
-        }
-
-        listingCase.EnsureOwnerOrAssignedAgent(userId, "You do not have permission to view this listing case's case contacts.");
-        
-
-        List<GetCaseContactsResponseDto> responseDtos = _mapper.Map<List<GetCaseContactsResponseDto>>(listingCase.CaseContacts);
-
-        return responseDtos;
-    }
 
     public async Task<AddAgentToListingCaseResponseDto> AddAgentToListingCaseAsync(AddAgentToListingCaseDto dto,string userId,int id,string? ipAddress,string email)
     {
@@ -329,109 +276,6 @@ public class ListingCaseService : IListingCaseService
             Id = agent.Id,
             ListingCaseId = id
         };
-    }
-
-    public async Task<SetCoverImageResponseDto> SetCoverImageAsync(int listingCaseId, SetCoverImageDto dto, string userId, string? ipAddress)
-    {
-        await _setCoverImageValidator.ValidateOrThrowAsync(dto);
-
-        ListingCase? listingCase = await _listingCaseRepository.GetListingCaseWithMediaAndAgentsAsync(listingCaseId);
-        if (listingCase == null)
-        {
-            throw new NotFoundException("The listing case does not exist!");
-        }
-
-        listingCase.EnsureAssignedAgent(userId, "Only the assigned agent can set the cover image.");
-        
-
-        MediaAsset? coverImage = listingCase.MediaAssets.FirstOrDefault(m => m.Id == dto.MediaId);
-        if (coverImage == null)
-        {
-            throw new BadRequestException("The media does not belong to this listing case.");
-        }
-
-        if (coverImage.MediaType != MediaType.Photos)
-        {
-            throw new BadRequestException("Only photos can be set as the cover image.");
-        }
-
-        foreach (MediaAsset mediaAsset in listingCase.MediaAssets)
-        {
-            mediaAsset.IsHero = mediaAsset.Id == coverImage.Id;
-        }
-
-        await _unitOfWork.SaveChangesAsync();
-
-        await _activityLogService.LogListingCaseAsync(ListingCaseActivityType.SetCoverImage, listingCaseId, userId,true, $"Set media {coverImage.Id} as cover image", ipAddress);
-
-        return new SetCoverImageResponseDto
-        {
-            ListingCaseId = listingCaseId,
-            MediaId = coverImage.Id
-        };
-    }
-
-    public async Task<AgentSelectMediaResponseDto> AgentSelectMediaAsync(string userId,int id,AgentSelectMediaDto dto,string? ipAddress)
-    {
-        await _agentSelectMediaValidator.ValidateOrThrowAsync(dto);
-
-        ListingCase? listingCase = await _listingCaseRepository.GetListingCaseWithMediaAndAgentsAsync(id);
-        if (listingCase == null)
-        {
-            throw new NotFoundException("The listing case does not exist!");
-        }
-
-        listingCase.EnsureAssignedAgent(userId, "Only the assigned agent can select the media.");
-        
-
-        List<int> invalidIds = dto.MediaAssetsId
-            .Where(mediaId => !listingCase.MediaAssets.Any(m => m.Id == mediaId))
-            .ToList();
-        if (invalidIds.Count > 0)
-        {
-            throw new BadRequestException($"Media {string.Join(", ", invalidIds)} do not belong to this listing case.");
-        }
-
-        bool hasNonPhoto = listingCase.MediaAssets.Any(m => dto.MediaAssetsId.Contains(m.Id) && m.MediaType != MediaType.Photos);
-        if (hasNonPhoto)
-        {
-            throw new BadRequestException("Only photos can be selected.");
-        }
-
-        foreach (MediaAsset mediaAsset in listingCase.MediaAssets)
-        {
-            mediaAsset.IsSelected = dto.MediaAssetsId.Contains(mediaAsset.Id);
-        }
-
-
-        await _unitOfWork.SaveChangesAsync();
-
-        string message = dto.MediaAssetsId.Count == 0
-            ? "Cleared all selected media"
-            : $"Selected media: {string.Join(", ", dto.MediaAssetsId)}";
-        await _activityLogService.LogListingCaseAsync(ListingCaseActivityType.SelectMedia, id, userId,true, message, ipAddress);
-        return new AgentSelectMediaResponseDto
-        {
-            Id = id,
-            MediaAssetsId = dto.MediaAssetsId
-        };
-    }
-
-
-    public async Task<List<GetFInalSelectionResponseDto>> GetFinalSelectionAsync(int id,string userId)
-    {
-        ListingCase? listingCase = await _listingCaseRepository.GetListingCaseWithMediaAndAgentsAsync(id);
-        if (listingCase == null)
-        {
-            throw new NotFoundException("The listing case does not exist!");
-        }
-
-        listingCase.EnsureOwnerOrAssignedAgent(userId, "You do not have permission to view this listing case's media.");
-        
-
-        List<MediaAsset> result = listingCase.MediaAssets.Where(m => m.IsSelected && !m.IsDeleted).ToList();
-        return _mapper.Map<List<GetFInalSelectionResponseDto>>(result);
-
     }
 
     public async Task<PublishListingCaseResponseDto> PublishListingCaseAsync(int id, string userId, string? ipAddress)

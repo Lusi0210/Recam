@@ -1,6 +1,5 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Remp.Common.Responses;
 using Remp.Models.Constants;
@@ -166,7 +165,7 @@ namespace Remp.API.Controllers
         public async Task<ActionResult<ApiResponse<List<GetListingCaseMediaAssetsResponseDto>>>> GetListingCaseMediaAssets(int id)
         {
             string userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-            List<GetListingCaseMediaAssetsResponseDto> result = await _listingCaseService.GetListingCaseMediaAssetsAsync(id,userId);
+            List<GetListingCaseMediaAssetsResponseDto> result = await _mediaAssetService.GetListingCaseMediaAssetsAsync(id,userId);
             return Ok(ApiResponse<List<GetListingCaseMediaAssetsResponseDto>>.SuccessResponse(result));
         }
 
@@ -184,7 +183,7 @@ namespace Remp.API.Controllers
         public async Task<ActionResult<ApiResponse<List<GetCaseContactsResponseDto>>>> GetCaseContactsByListingCaseId(int id)
         {
             string userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-            List<GetCaseContactsResponseDto> result = await _listingCaseService.GetCaseContactsByListingCaseIdAsync(id,userId);
+            List<GetCaseContactsResponseDto> result = await _caseContactService.GetCaseContactsByListingCaseIdAsync(id,userId);
             return Ok(ApiResponse<List<GetCaseContactsResponseDto>>.SuccessResponse(result));
         }
 
@@ -216,7 +215,6 @@ namespace Remp.API.Controllers
         public async Task<ActionResult<ApiResponse<int>>> AddCaseContactToListingCase(int id,AddCaseContactDto dto)
         {
             string userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-            // string? ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
             int result = await _caseContactService.AddCaseContactToListingCaseAsync(id,dto,userId);
             return StatusCode(StatusCodes.Status201Created,ApiResponse<int>.SuccessResponse(result,"Add case contact successful!"));
         }
@@ -274,7 +272,7 @@ namespace Remp.API.Controllers
         {
             string userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
             string? ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-            SetCoverImageResponseDto result = await _listingCaseService.SetCoverImageAsync(id, dto, userId, ipAddress);
+            SetCoverImageResponseDto result = await _mediaAssetService.SetCoverImageAsync(id, dto, userId, ipAddress);
             return Ok(ApiResponse<SetCoverImageResponseDto>.SuccessResponse(result, "Set cover image successful!"));
         }
 
@@ -295,7 +293,7 @@ namespace Remp.API.Controllers
         {
             string userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
             string? ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-            AgentSelectMediaResponseDto result = await _listingCaseService.AgentSelectMediaAsync(userId,id,dto,ipAddress);
+            AgentSelectMediaResponseDto result = await _mediaAssetService.AgentSelectMediaAsync(userId,id,dto,ipAddress);
             return Ok(ApiResponse<AgentSelectMediaResponseDto>.SuccessResponse(result,"Select media successful!"));
         }
 
@@ -305,10 +303,10 @@ namespace Remp.API.Controllers
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<List<GetFInalSelectionResponseDto>>> GetFinalSelectedMedia(int id)
+        public async Task<ActionResult<ApiResponse<List<GetFInalSelectionResponseDto>>>> GetFinalSelectedMedia(int id)
         {
             string userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-            List<GetFInalSelectionResponseDto> result = await _listingCaseService.GetFinalSelectionAsync(id,userId);
+            List<GetFInalSelectionResponseDto> result = await _mediaAssetService.GetFinalSelectionAsync(id,userId);
             return Ok(ApiResponse<List<GetFInalSelectionResponseDto>>.SuccessResponse(result,"Get selected media successful!"));
         }
 

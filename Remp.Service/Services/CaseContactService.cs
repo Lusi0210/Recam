@@ -55,4 +55,20 @@ public class CaseContactService : ICaseContactService
         
         return caseContact.Id;
     }
+
+    public async Task<List<GetCaseContactsResponseDto>> GetCaseContactsByListingCaseIdAsync(int id,string userId)
+    {
+        ListingCase? listingCase = await _listingCaseRepository.GetListingCaseWithContactsAsync(id);
+        if(listingCase == null)
+        {
+            throw new NotFoundException("The listing case does not exist!");
+        }
+
+        listingCase.EnsureOwnerOrAssignedAgent(userId, "You do not have permission to view this listing case's case contacts.");
+        
+
+        List<GetCaseContactsResponseDto> responseDtos = _mapper.Map<List<GetCaseContactsResponseDto>>(listingCase.CaseContacts);
+
+        return responseDtos;
+    }
 }
