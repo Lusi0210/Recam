@@ -10,6 +10,7 @@ using Remp.Models.Constants;
 using Remp.Models.Documents;
 using Remp.Models.Entities;
 using Remp.Models.Enums;
+using Remp.Models.Filters;
 using Remp.Repository.Common;
 using Remp.Repository.Interfaces;
 using Remp.Service.DTOs;
@@ -24,7 +25,7 @@ public class ListingCaseService : IListingCaseService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IListingCaseHistoryRepository _listingCaseHistoryRepository;
     private readonly ILogger<ListingCaseService> _logger;
-    private readonly IValidator<PaginationQueryDto> _paginationValidator;
+    private readonly IValidator<ListingCaseQueryDto> _listingCaseQueryValidator;
     private readonly IValidator<UpdateListingCaseDto> _updateListingCaseValidator;
     private readonly IValidator<UpdateListingCaseStatusDto> _updateListingCaseStatusValidator;
     private readonly IMapper _mapper;
@@ -42,7 +43,7 @@ public class ListingCaseService : IListingCaseService
         IUnitOfWork unitOfWork,
         IListingCaseHistoryRepository listingCaseHistoryRepository,
         ILogger<ListingCaseService> logger,
-        IValidator<PaginationQueryDto> paginationValidator,
+        IValidator<ListingCaseQueryDto> listingCaseQueryValidator,
         IValidator<UpdateListingCaseDto> updateListingCaseValidator,
         IValidator<UpdateListingCaseStatusDto> updateListingCaseStatusValidator,
         IMapper mapper,
@@ -59,7 +60,7 @@ public class ListingCaseService : IListingCaseService
         _unitOfWork = unitOfWork;
         _listingCaseHistoryRepository = listingCaseHistoryRepository;
         _logger = logger;
-        _paginationValidator = paginationValidator;
+        _listingCaseQueryValidator = listingCaseQueryValidator;
         _updateListingCaseValidator = updateListingCaseValidator;
         _updateListingCaseStatusValidator = updateListingCaseStatusValidator;
         _mapper = mapper;
@@ -179,30 +180,32 @@ public class ListingCaseService : IListingCaseService
         return listingCase.Id;
     }
 
-    public async Task<PagedResult<GetListingCaseResponseDto>> GetAllListingCaseAsync(string role,string userId,PaginationQueryDto query)
+    public async Task<PagedResult<GetListingCaseResponseDto>> GetAllListingCaseAsync(string role,string userId,ListingCaseQueryDto query)
     {
-        ValidationResult validationResult = await _paginationValidator.ValidateAsync(query);
+        ValidationResult validationResult = await _listingCaseQueryValidator.ValidateAsync(query);
         if (!validationResult.IsValid)
         {
             List<string> errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
             throw new BadRequestException("Validation failed", errors);
         }
 
+        ListingCaseFilter filter = _mapper.Map<ListingCaseFilter>(query);
         PagedResult<ListingCase> listingCases;
 
-        if(role == RoleNames.PhotographyCompany)
+        if (role == RoleNames.PhotographyCompany)
         {
-            listingCases = await _listingCaseRepository.GetPagedByPhotographyCompanyAsync(query.PageNumber,query.PageSize,userId);
-        } else if (role == RoleNames.Agent)
+            listingCases = await _listingCaseRepository.GetPagedByPhotographyCompanyAsync(query.PageNumber, query.PageSize, userId, filter);
+        }
+        else if (role == RoleNames.Agent)
         {
-            listingCases = await _listingCaseRepository.GetPagedByAgentAsync(query.PageNumber,query.PageSize,userId);
-        } else
+            listingCases = await _listingCaseRepository.GetPagedByAgentAsync(query.PageNumber, query.PageSize, userId, filter);
+        }
+        else
         {
             throw new ForbiddenException("You do not have permission to view listing cases.");
         }
 
-
-        List<GetListingCaseResponseDto> listingCaseDto= _mapper.Map<List<GetListingCaseResponseDto>>(listingCases.Items);
+        List<GetListingCaseResponseDto> listingCaseDto = _mapper.Map<List<GetListingCaseResponseDto>>(listingCases.Items);
 
         return new PagedResult<GetListingCaseResponseDto>
         {
@@ -591,4 +594,7 @@ public class ListingCaseService : IListingCaseService
             ShareableUrl = listingCase.ShareableUrl
         };
     }
+
+
+
 }

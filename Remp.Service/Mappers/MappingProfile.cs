@@ -1,6 +1,7 @@
 using System;
 using AutoMapper;
 using Remp.Models.Entities;
+using Remp.Models.Filters;
 using Remp.Models.Projections;
 using Remp.Service.DTOs;
 
@@ -27,5 +28,6 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.User.Email));
         CreateMap<AddCaseContactDto,CaseContact>();
         CreateMap<MediaAsset,GetFInalSelectionResponseDto>();
+        CreateMap<ListingCaseQueryDto, ListingCaseFilter>();
     }
 }

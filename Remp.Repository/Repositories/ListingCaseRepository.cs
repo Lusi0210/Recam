@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Remp.Common.Responses;
 using Remp.DataAccess.Data;
 using Remp.Models.Entities;
+using Remp.Models.Filters;
 using Remp.Repository.Interfaces;
 
 namespace Remp.Repository.Repositories;
@@ -14,16 +15,60 @@ public class ListingCaseRepository : IListingCaseRepository
         _dbContext = dbContext;
     }
 
+    private static IQueryable<ListingCase> ApplyFilters(IQueryable<ListingCase> query, ListingCaseFilter filter)
+    {
+        if (filter.Status.HasValue)
+        {
+            query = query.Where(l => l.ListcaseStatus == filter.Status.Value);
+        }
+
+        if (filter.PropertyType.HasValue)
+        {
+            query = query.Where(l => l.PropertyType == filter.PropertyType.Value);
+        }
+
+        if (filter.SaleCategory.HasValue)
+        {
+            query = query.Where(l => l.SaleCategory == filter.SaleCategory.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.City))
+        {
+            query = query.Where(l => l.City.Contains(filter.City));
+        }
+
+        if (filter.MinPrice.HasValue)
+        {
+            query = query.Where(l => l.Price >= filter.MinPrice.Value);
+        }
+
+        if (filter.MaxPrice.HasValue)
+        {
+            query = query.Where(l => l.Price <= filter.MaxPrice.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.Search))
+        {
+            query = query.Where(l => l.Title.Contains(filter.Search)
+                                || l.Street.Contains(filter.Search)
+                                || l.City.Contains(filter.Search));
+        }
+
+        return query;
+    }
+
     public void Add(ListingCase listingCase)
     {
         _dbContext.ListingCases.Add(listingCase);
     }
 
-    public async Task<PagedResult<ListingCase>> GetPagedByPhotographyCompanyAsync(int pageNumber, int pageSize,string userId)
+    public async Task<PagedResult<ListingCase>> GetPagedByPhotographyCompanyAsync(int pageNumber, int pageSize,string userId,ListingCaseFilter filter)
     {
         IQueryable<ListingCase> query = _dbContext.ListingCases
                                                 .AsNoTracking()
                                                 .Where(l => !l.IsDeleted && l.UserId == userId);
+        query = ApplyFilters(query, filter);
+        
         int totalCount = await query.CountAsync();
 
         List<ListingCase> items = await query
@@ -42,11 +87,13 @@ public class ListingCaseRepository : IListingCaseRepository
 
     }
 
-    public async Task<PagedResult<ListingCase>> GetPagedByAgentAsync(int pageNumber, int pageSize,string userId)
+    public async Task<PagedResult<ListingCase>> GetPagedByAgentAsync(int pageNumber, int pageSize,string userId,ListingCaseFilter filter)
     {
         IQueryable<ListingCase> query = _dbContext.ListingCases
                                                     .AsNoTracking()
                                                     .Where(l => !l.IsDeleted && l.Agents.Any(a=> a.Id == userId));
+
+        query = ApplyFilters(query, filter);
 
         int totalCount = await query.CountAsync();
 

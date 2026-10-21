@@ -61,7 +61,7 @@ namespace Remp.API.Controllers
         [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status403Forbidden)]
-        public async Task<ActionResult<ApiResponse<PagedResult<GetListingCaseResponseDto>>>> GetAllListingCase([FromQuery] PaginationQueryDto query)
+        public async Task<ActionResult<ApiResponse<PagedResult<GetListingCaseResponseDto>>>> GetAllListingCase([FromQuery] ListingCaseQueryDto query)
         {
             string userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
             string role = User.FindFirstValue(ClaimTypes.Role)!;
