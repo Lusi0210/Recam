@@ -99,6 +99,19 @@ AzureBlobSettings blobSettings = builder.Configuration.GetSection("AzureBlobSett
 
 builder.Services.Configure<FrontendSettings>(builder.Configuration.GetSection("FrontendSettings"));
 
+FrontendSettings frontendSettings = builder.Configuration.GetSection("FrontendSettings").Get<FrontendSettings>()!;
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Frontend", policy =>
+    {
+        policy.WithOrigins(frontendSettings.BaseUrl)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .WithExposedHeaders("Content-Disposition");
+    });
+});
+
 builder.Services.AddSingleton<BlobServiceClient>(new BlobServiceClient(blobSettings.ConnectionString));
 builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
 
@@ -151,6 +164,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("Frontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
