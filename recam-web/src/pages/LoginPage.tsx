@@ -2,7 +2,7 @@ import { useState, type SyntheticEvent } from "react"
 import type { ApiResponse } from "../types/api";
 import type { LoginRequest } from "../types/auth";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
 export default function LoginPage() {
@@ -73,6 +73,11 @@ export default function LoginPage() {
             >
               {isLoading ? 'Logging in...' : 'Login'}
             </button>
+            <p className="text-sm text-center text-gray-600">
+              Don't have an account?{' '}
+              <Link to="/register" className="text-blue-600 hover:underline">Register</Link>
+            </p>
+
           </form>
         </div>
 }
