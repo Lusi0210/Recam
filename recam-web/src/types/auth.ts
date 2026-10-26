@@ -15,7 +15,7 @@ export interface LoginResponse{
 export interface AuthUser{
     userId:string,
     email:string,
-    role:string
+    role:RoleName
 }
 
 export interface RegisterRequest{
