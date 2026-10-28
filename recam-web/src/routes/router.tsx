@@ -9,6 +9,7 @@ import GuestRoute from '../components/GuestRoute';
 import MainLayout from '../layouts/MainLayout';
 import UserManagementPage from '../pages/UserManagementPage';
 import CreateListingCasePage from '../pages/CreateListingCasePage';
+import ListingCaseDetailsPage from '../pages/ListingCaseDetailsPage';
 
 export const router = createBrowserRouter([
   {
@@ -28,6 +29,7 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
+      { path: 'listing-cases/:id', element: <ListingCaseDetailsPage /> },
       {
         path: 'users',
         element: (

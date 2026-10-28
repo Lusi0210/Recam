@@ -1,3 +1,5 @@
+import type { Agent } from "./agent";
+import type { MediaAsset } from "./mediaAsset";
 
 export interface ListingCase{
     id:number,
@@ -51,4 +53,39 @@ export interface CreateListingCaseRequest{
 
 export interface CreateListingCaseResponse{
     id:number
+}
+
+// export interface UpdateListingCaseRequest{
+//     title:string,
+//     description?:string,
+//     price:number,
+//     bedrooms:number,
+//     bathrooms:number,
+//     garages:number,
+//     floorArea:number,
+//     saleCategory:SaleCategory
+// }
+
+
+export interface ListingCaseDetailsResponse{
+    id:number,
+    title:string,
+    description?:string,
+    street:string,
+    city:string,
+    state:string,
+    postcode:string,
+    longitude:number
+    latitude:number
+    price:number
+    bedrooms:number,
+    bathrooms:number,
+    garages:number,
+    floorArea:number
+    createdAt:string,
+    propertyType:PropertyType
+    saleCategory:SaleCategory
+    listcaseStatus:ListcaseStatus,
+    mediaAssets:MediaAsset[],
+    agents:Agent[]
 }

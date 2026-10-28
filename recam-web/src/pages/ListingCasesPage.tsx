@@ -63,7 +63,10 @@ export default function ListingCasesPage() {
                     } else {
                         setErrorMessage(error.response?.data?.message ?? 'Failed to load listing cases');
                     }
+                } else {
+                    setErrorMessage('Something went wrong');
                 }
+
             } finally {
                 setIsLoading(false);    
             }
@@ -243,7 +246,11 @@ export default function ListingCasesPage() {
                     ) : (
                         listingCases.map((listingCase) => (
                             <tr key={listingCase.id} className="hover:bg-gray-50">
-                            <td className="px-4 py-3 font-medium text-gray-900">{listingCase.title}</td>
+                            <td className="px-4 py-3 font-medium text-gray-900">
+                                <Link to={`/listing-cases/${listingCase.id}`} className="hover:text-blue-600 hover:underline">
+                                    {listingCase.title}
+                                </Link>
+                            </td>
                             <td className="px-4 py-3 text-gray-600">
                                 {listingCase.street}, {listingCase.city} {listingCase.state}
                             </td>
