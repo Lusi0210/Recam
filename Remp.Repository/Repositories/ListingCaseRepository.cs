@@ -57,6 +57,22 @@ public class ListingCaseRepository : IListingCaseRepository
         return query;
     }
 
+    private static IQueryable<ListingCase> ApplySorting(IQueryable<ListingCase> query, ListingCaseFilter filter)
+    {
+        bool descending = filter.SortDirection?.ToLower() == "desc";
+
+        IOrderedQueryable<ListingCase> ordered = filter.SortBy?.ToLower() switch
+        {
+            "title"  => descending ? query.OrderByDescending(l => l.Title)          : query.OrderBy(l => l.Title),
+            "city"   => descending ? query.OrderByDescending(l => l.City)           : query.OrderBy(l => l.City),
+            "price"  => descending ? query.OrderByDescending(l => l.Price)          : query.OrderBy(l => l.Price),
+            "status" => descending ? query.OrderByDescending(l => l.ListcaseStatus) : query.OrderBy(l => l.ListcaseStatus),
+            _        => query.OrderByDescending(l => l.CreatedAt)
+        };
+
+        return ordered.ThenBy(l => l.Id);
+    }
+
     public void Add(ListingCase listingCase)
     {
         _dbContext.ListingCases.Add(listingCase);
@@ -71,8 +87,9 @@ public class ListingCaseRepository : IListingCaseRepository
         
         int totalCount = await query.CountAsync();
 
+        query = ApplySorting(query, filter);
+
         List<ListingCase> items = await query
-            .OrderByDescending(l => l.CreatedAt)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
@@ -97,8 +114,9 @@ public class ListingCaseRepository : IListingCaseRepository
 
         int totalCount = await query.CountAsync();
 
+        query = ApplySorting(query, filter);
+
         List<ListingCase> items = await query
-            .OrderByDescending(l => l.CreatedAt)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
