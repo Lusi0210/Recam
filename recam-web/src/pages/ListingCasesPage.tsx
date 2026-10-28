@@ -4,6 +4,8 @@ import { getListingCases } from "../api/listingCaseApi";
 import type { ApiResponse, PagedResult } from "../types/api";
 import { LISTCASE_STATUS_LABELS, LISTCASE_STATUS_STYLES, PROPERTY_TYPE_LABELS, SALE_CATEGORY_LABELS } from "../constants/listingCase";
 import axios from "axios";
+import { Link } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 
 const PAGE_SIZE: number = 10;
 
@@ -31,8 +33,13 @@ export default function ListingCasesPage() {
     const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [errorMessage, setErrorMessage] = useState<string>('');
+    const { user } = useAuth();
+    const canCreate: boolean = user?.role === 'PhotographyCompany';
+
     useEffect(()=>{
         const fetchData = async (): Promise<void> => {
+            setIsLoading(true);
+            setErrorMessage('');
             try {
                 const data: PagedResult<ListingCase> = await getListingCases({ 
                     pageNumber, 
@@ -49,10 +56,13 @@ export default function ListingCasesPage() {
                 });
                 setResult(data);
             } catch (error: unknown) {
-                 if (axios.isAxiosError<ApiResponse<null>>(error)) {
-                    setErrorMessage(error.response?.data?.message ?? 'Failed to load listing cases');
-                } else {
-                    setErrorMessage('Something went wrong');
+                if (axios.isAxiosError<ApiResponse<null>>(error)) {
+                    const errors: string[] | null | undefined = error.response?.data?.errors;
+                    if (errors && errors.length > 0) {
+                        setErrorMessage(errors.join(', '));
+                    } else {
+                        setErrorMessage(error.response?.data?.message ?? 'Failed to load listing cases');
+                    }
                 }
             } finally {
                 setIsLoading(false);    
@@ -105,7 +115,17 @@ export default function ListingCasesPage() {
     };
     return (
     <div>
-        <h1 className="text-2xl font-bold mb-4">Listing Cases</h1>
+        <div className="flex items-center justify-between mb-4">
+            <h1 className="text-2xl font-bold">Listing Cases</h1>
+            {canCreate && (
+                <Link
+                    to="/listing-cases/new"
+                    className="bg-blue-600 text-white rounded px-4 py-2 text-sm font-medium hover:bg-blue-700"
+                >
+                    + New Listing Case
+                </Link>
+            )}
+        </div>
 
         <form onSubmit={handleSearch} className="flex flex-wrap gap-2 mb-4">
             <input
