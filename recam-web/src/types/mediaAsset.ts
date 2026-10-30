@@ -1,4 +1,3 @@
-
 export type MediaType = 1 | 2 | 3 | 4;
 
 export interface MediaAsset{
@@ -9,5 +8,4 @@ export interface MediaAsset{
     userId:string,
     isHero:boolean,
     isSelected:boolean,
-
 }

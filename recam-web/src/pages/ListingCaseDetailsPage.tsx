@@ -7,6 +7,8 @@ import type { ApiResponse } from "../types/api";
 import { LISTCASE_STATUS_LABELS, LISTCASE_STATUS_STYLES, PROPERTY_TYPE_LABELS, SALE_CATEGORY_LABELS } from "../constants/listingCase";
 import { formatPrice } from "../utils/format";
 import { useAuth } from "../hooks/useAuth";
+import MediaUploader from "../components/MediaUploader";
+import type { MediaAsset } from "../types/mediaAsset";
 
 const ListingCaseDetailsPage = () => {
     const {id} = useParams<{id : string}>()
@@ -40,6 +42,12 @@ const ListingCaseDetailsPage = () => {
 
         fetchData();
     },[id])
+
+    const handleMediaUploaded = (newMedia: MediaAsset[]): void => {
+        setResult((prev) =>
+            prev ? { ...prev, mediaAssets: [...prev.mediaAssets, ...newMedia] } : prev
+        );
+    };
 
     
     if (isLoading) {
@@ -115,6 +123,12 @@ const ListingCaseDetailsPage = () => {
                 <h2 className="text-lg font-semibold mb-4">
                     Media ({result.mediaAssets.length})
                 </h2>
+
+                {canEdit && (
+                    <div className="mb-4">
+                        <MediaUploader listingCaseId={result.id} onUploaded={handleMediaUploaded} />
+                    </div>
+                )}
 
                 {result.mediaAssets.length === 0 ? (
                     <p className="text-sm text-gray-500">No media uploaded yet.</p>
