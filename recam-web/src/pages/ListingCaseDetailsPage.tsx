@@ -6,12 +6,15 @@ import axios from "axios";
 import type { ApiResponse } from "../types/api";
 import { LISTCASE_STATUS_LABELS, LISTCASE_STATUS_STYLES, PROPERTY_TYPE_LABELS, SALE_CATEGORY_LABELS } from "../constants/listingCase";
 import { formatPrice } from "../utils/format";
+import { useAuth } from "../hooks/useAuth";
 
 const ListingCaseDetailsPage = () => {
     const {id} = useParams<{id : string}>()
     const [isLoading,setIsLoading] = useState<boolean>(true);
     const [errorMessage, setErrorMessage] = useState<string>('');
     const [result,setResult] = useState<ListingCaseDetailsResponse | null>(null);
+    const { user } = useAuth();
+    const canEdit: boolean = user?.role === 'PhotographyCompany';
     useEffect(()=>{
         const fetchData = async () :Promise<void> => {
             setIsLoading(true);
@@ -71,9 +74,19 @@ const ListingCaseDetailsPage = () => {
                         {result.street}, {result.city} {result.state} {result.postcode}
                     </p>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${LISTCASE_STATUS_STYLES[result.listcaseStatus]}`}>
-                    {LISTCASE_STATUS_LABELS[result.listcaseStatus]}
-                </span>
+                <div className="flex flex-col items-end gap-2">
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${LISTCASE_STATUS_STYLES[result.listcaseStatus]}`}>
+                        {LISTCASE_STATUS_LABELS[result.listcaseStatus]}
+                    </span>
+                    {canEdit && (
+                        <Link
+                            to={`/listing-cases/${result.id}/edit`}
+                            className="text-sm border border-gray-300 rounded px-3 py-1.5 hover:bg-gray-100"
+                        >
+                            Edit
+                        </Link>
+                    )}
+                </div>
             </div>
 
             <div className="bg-white rounded-lg shadow p-6">

@@ -12,5 +12,4 @@ public class UpdateListingCaseDto
     public int Garages {get;set;}
     public double FloorArea {get;set;}
     public SaleCategory SaleCategory {get;set;}
-
 }

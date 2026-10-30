@@ -55,16 +55,16 @@ export interface CreateListingCaseResponse{
     id:number
 }
 
-// export interface UpdateListingCaseRequest{
-//     title:string,
-//     description?:string,
-//     price:number,
-//     bedrooms:number,
-//     bathrooms:number,
-//     garages:number,
-//     floorArea:number,
-//     saleCategory:SaleCategory
-// }
+export interface UpdateListingCaseRequest{
+    title:string,
+    description?:string,
+    price:number,
+    bedrooms:number,
+    bathrooms:number,
+    garages:number,
+    floorArea:number,
+    saleCategory:SaleCategory
+}
 
 
 export interface ListingCaseDetailsResponse{

@@ -10,6 +10,7 @@ import MainLayout from '../layouts/MainLayout';
 import UserManagementPage from '../pages/UserManagementPage';
 import CreateListingCasePage from '../pages/CreateListingCasePage';
 import ListingCaseDetailsPage from '../pages/ListingCaseDetailsPage';
+import EditListingCasePage from '../pages/EditListingCasePage';
 
 export const router = createBrowserRouter([
   {
@@ -38,6 +39,14 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
+      {
+        path: 'listing-cases/:id/edit',
+        element: (
+            <ProtectedRoute allowedRoles={['PhotographyCompany']}>
+                <EditListingCasePage />
+            </ProtectedRoute>
+        ),
+      }
     ],
   },
   {
