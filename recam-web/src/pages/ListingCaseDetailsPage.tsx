@@ -9,6 +9,7 @@ import { formatPrice } from "../utils/format";
 import { useAuth } from "../hooks/useAuth";
 import MediaUploader from "../components/MediaUploader";
 import type { MediaAsset } from "../types/mediaAsset";
+import MediaGallery from "../components/MediaGallery";
 
 const ListingCaseDetailsPage = () => {
     const {id} = useParams<{id : string}>()
@@ -133,22 +134,7 @@ const ListingCaseDetailsPage = () => {
                 {result.mediaAssets.length === 0 ? (
                     <p className="text-sm text-gray-500">No media uploaded yet.</p>
                 ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                        {result.mediaAssets.map((media) => (
-                            <div key={media.id} className="relative">
-                                <img
-                                    src={media.mediaUrl}
-                                    alt={result.title}
-                                    className="w-full h-40 object-cover rounded"
-                                />
-                                {media.isHero && (
-                                    <span className="absolute top-2 left-2 bg-blue-600 text-white text-xs font-medium px-2 py-1 rounded">
-                                        Cover
-                                    </span>
-                                )}
-                            </div>
-                        ))}
-                    </div>
+                    <MediaGallery mediaAssets={result.mediaAssets}/>
                 )}
             </div>
             <div className="bg-white rounded-lg shadow p-6">
