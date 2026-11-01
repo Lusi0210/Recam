@@ -4,6 +4,7 @@ import { register } from "../api/authApi";
 import { Link, useNavigate } from "react-router-dom";
 import { getErrorMessage } from "../utils/apiError";
 import { useToast } from "../hooks/useToast";
+import Spinner from "../components/Spinner";
 
 
 const RegisterPage = () =>{
@@ -79,7 +80,8 @@ const RegisterPage = () =>{
                 className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
 
             <button type="submit" disabled={isLoading}
-                className="bg-blue-600 text-white rounded py-2 font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed">
+                className="flex items-center justify-center gap-2 bg-blue-600 text-white rounded py-2 font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed">
+                {isLoading && <Spinner size="sm" />}
                 {isLoading ? 'Registering...' : 'Register'}
             </button>
 

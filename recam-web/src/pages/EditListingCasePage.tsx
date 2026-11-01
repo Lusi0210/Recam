@@ -5,6 +5,8 @@ import type { ListingCaseDetailsResponse, SaleCategory} from "../types/listingCa
 import { SALE_CATEGORY_LABELS } from "../constants/listingCase";
 import { getErrorMessage } from "../utils/apiError";
 import { useToast } from "../hooks/useToast";
+import Spinner from "../components/Spinner";
+import FormSkeleton from "../components/FormSkeleton";
 
 const inputClass: string =
     "w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
@@ -41,7 +43,7 @@ const EditListingCasePage = () => {
                 setFloorArea(String(response.floorArea));
                 setSaleCategory(String(response.saleCategory)); 
             } catch (error:unknown) {
-                setErrorMessage(getErrorMessage(error, 'Failed to load listing case'));
+                setLoadError(getErrorMessage(error, 'Failed to load listing case'));
             } finally {
                 setIsLoading(false);
             }
@@ -76,7 +78,7 @@ const EditListingCasePage = () => {
     }
 
     if (isLoading) {
-        return <p className="text-gray-500">Loading...</p>;
+        return <FormSkeleton />;
     }
 
     if (loadError) {
@@ -140,7 +142,8 @@ const EditListingCasePage = () => {
                     <button type="button" onClick={() => navigate(`/listing-cases/${id}`)} className="border border-gray-300 rounded px-4 py-2 text-sm hover:bg-gray-100">
                         Cancel
                     </button>
-                    <button type="submit" disabled={isSaving} className="bg-blue-600 text-white rounded px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed">
+                    <button type="submit" disabled={isSaving} className="inline-flex items-center gap-2 bg-blue-600 text-white rounded px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed">
+                        {isSaving && <Spinner size="sm" />}
                         {isSaving ? 'Saving...' : 'Save changes'}
                     </button>
                 </div>

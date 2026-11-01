@@ -9,6 +9,7 @@ import MediaUploader from "../components/MediaUploader";
 import type { MediaAsset } from "../types/mediaAsset";
 import MediaGallery from "../components/MediaGallery";
 import { getErrorMessage } from "../utils/apiError";
+import DetailSkeleton from "../components/DetailSkeleton";
 
 const ListingCaseDetailsPage = () => {
     const {id} = useParams<{id : string}>()
@@ -42,7 +43,7 @@ const ListingCaseDetailsPage = () => {
 
     
     if (isLoading) {
-        return <p className="text-gray-500">Loading...</p>;
+        return <DetailSkeleton />;
     }
 
     if (errorMessage) {

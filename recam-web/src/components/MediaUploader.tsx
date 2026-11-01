@@ -4,6 +4,7 @@ import { MEDIA_TYPE_LABELS } from "../constants/mediaAsset";
 import type { MediaAsset, MediaType } from "../types/mediaAsset";
 import { getErrorMessage } from "../utils/apiError";
 import { useToast } from "../hooks/useToast";
+import Spinner from "./Spinner";
 
 interface MediaUploaderProps {
     listingCaseId: number;
@@ -96,9 +97,10 @@ const MediaUploader = ({ listingCaseId, onUploaded }: MediaUploaderProps) => {
                     type="button"
                     onClick={handleUpload}
                     disabled={isUploading}
-                    className="bg-blue-600 text-white rounded px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:bg-gray-400"
+                    className="inline-flex items-center gap-2 bg-blue-600 text-white rounded px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:bg-gray-400"
                 >
-                    {isUploading ? 'Uploading...' : 'Upload'}
+                    {isUploading && <Spinner size="sm" />}
+                    {isUploading ? `Uploading ${progress}%` : 'Upload'}
                 </button>
                                 {isUploading && (
                     <div className="w-full bg-gray-200 rounded h-2 overflow-hidden">

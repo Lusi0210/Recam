@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { getErrorMessage } from "../utils/apiError";
 import { useToast } from "../hooks/useToast";
+import Spinner from "../components/Spinner";
 
 export default function LoginPage() {
 
@@ -64,11 +65,12 @@ export default function LoginPage() {
             />
 
             <button
-              type="submit"
-              disabled={isLoading}
-              className="bg-blue-600 text-white rounded py-2 font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                type="submit"
+                disabled={isLoading}
+                className="flex items-center justify-center gap-2 bg-blue-600 text-white rounded py-2 font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Logging in...' : 'Login'}
+                {isLoading && <Spinner size="sm" />}
+                {isLoading ? 'Logging in...' : 'Login'}
             </button>
             <p className="text-sm text-center text-gray-600">
               Don't have an account?{' '}

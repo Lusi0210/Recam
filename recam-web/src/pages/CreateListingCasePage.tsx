@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 
 import { getErrorMessage } from "../utils/apiError";
 import { useToast } from "../hooks/useToast";
+import Spinner from "../components/Spinner";
 
 
 const inputClass: string =
@@ -163,7 +164,8 @@ const CreateListingCasePage = () => {
                         <button type="button" onClick={() => navigate('/')} className="border border-gray-300 rounded px-4 py-2 text-sm hover:bg-gray-100">
                             Cancel
                         </button>
-                        <button type="submit" disabled={isLoading} className="bg-blue-600 text-white rounded px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed">
+                        <button type="submit" disabled={isLoading} className="inline-flex items-center gap-2 bg-blue-600 text-white rounded px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed">
+                            {isLoading && <Spinner size="sm" />}
                             {isLoading ? 'Creating...' : 'Create'}
                         </button>
                     </div>
