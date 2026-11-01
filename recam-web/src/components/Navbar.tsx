@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { useToast } from "../hooks/useToast";
 
 interface NavbarProps {
     onMenuClick: () => void;
@@ -8,9 +9,11 @@ interface NavbarProps {
 const Navbar = ({ onMenuClick }: NavbarProps) => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+    const { showToast } = useToast();
 
     const handleLogout = (): void => {
         logout();
+        showToast('Logged out', 'success');
         navigate('/login', { replace: true });
     };
 

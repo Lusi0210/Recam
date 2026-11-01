@@ -3,6 +3,7 @@ import type { LoginRequest } from "../types/auth";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { getErrorMessage } from "../utils/apiError";
+import { useToast } from "../hooks/useToast";
 
 export default function LoginPage() {
 
@@ -12,7 +13,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [isLoading,setIsLoading] = useState<boolean>(false);
   const authContext = useAuth();
-
+  const { showToast } = useToast();
 
 
   const  handleSubmit = async (event:SyntheticEvent<HTMLFormElement>) :Promise<void> =>{
@@ -22,6 +23,7 @@ export default function LoginPage() {
     const request:LoginRequest = {email,password};
     try {
       await authContext.login(request);
+      showToast('Welcome back!', 'success');
       navigate('/')
     } catch(error: unknown){
       setErrorMessage(getErrorMessage(error, 'Login failed'));

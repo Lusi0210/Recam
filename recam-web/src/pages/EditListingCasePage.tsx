@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import type { ListingCaseDetailsResponse, SaleCategory} from "../types/listingCase";
 import { SALE_CATEGORY_LABELS } from "../constants/listingCase";
 import { getErrorMessage } from "../utils/apiError";
+import { useToast } from "../hooks/useToast";
 
 const inputClass: string =
     "w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
@@ -23,6 +24,7 @@ const EditListingCasePage = () => {
     const [isSaving,setIsSaving] = useState<boolean>(false);
     const navigate = useNavigate();
     const [loadError, setLoadError] = useState<string>('');
+    const { showToast } = useToast();
 
     useEffect(()=>{
         const fetchData =  async () => {
@@ -63,6 +65,7 @@ const EditListingCasePage = () => {
             floorArea:Number(floorArea),
             saleCategory:Number(saleCategory) as SaleCategory},
             Number(id));
+            showToast('Listing case updated', 'success');
             navigate(`/listing-cases/${id}`);
         } catch (error:unknown) {
             setErrorMessage(getErrorMessage(error, 'Failed to update listing case'));

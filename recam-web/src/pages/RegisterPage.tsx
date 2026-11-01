@@ -3,6 +3,8 @@ import type { RegisterRequest } from "../types/auth";
 import { register } from "../api/authApi";
 import { Link, useNavigate } from "react-router-dom";
 import { getErrorMessage } from "../utils/apiError";
+import { useToast } from "../hooks/useToast";
+
 
 const RegisterPage = () =>{
     const [email,setEmail] = useState<string>('');
@@ -14,6 +16,7 @@ const RegisterPage = () =>{
     const navigate = useNavigate();
     const [errorMessage,setErrorMessage] = useState<string>('');
     const [isLoading,setIsLoading] = useState<boolean>(false);
+    const { showToast } = useToast();
     
 
     const handleSubmit = async (event:SyntheticEvent<HTMLFormElement>):Promise<void> => {
@@ -29,6 +32,7 @@ const RegisterPage = () =>{
         const request:RegisterRequest = {email,password,confirmPassword,agentFirstName,agentLastName,companyName};
         try {
             await register(request);
+            showToast('Account created. Please log in.', 'success');
             navigate('/login')
         } catch (error: unknown) {
            setErrorMessage(getErrorMessage(error, 'Registration failed'));

@@ -5,6 +5,7 @@ import { createListingCase } from "../api/listingCaseApi";
 import { useNavigate } from "react-router-dom";
 
 import { getErrorMessage } from "../utils/apiError";
+import { useToast } from "../hooks/useToast";
 
 
 const inputClass: string =
@@ -29,6 +30,7 @@ const CreateListingCasePage = () => {
     const [isLoading,setIsLoading] = useState<boolean>(false);
     const [errorMessage,setErrorMessage] = useState<string>('');
     const navigate = useNavigate();
+    const { showToast } = useToast();
 
     const handleSubmit = async (event:SyntheticEvent<HTMLFormElement>) : Promise<void>=> {
         event.preventDefault();
@@ -53,6 +55,7 @@ const CreateListingCasePage = () => {
             saleCategory:Number(saleCategory) as SaleCategory
             };
             await createListingCase(request)
+            showToast('Listing case created', 'success');
             navigate('/')
         } catch (error: unknown) {
             setErrorMessage(getErrorMessage(error, 'Failed to create listing case'));

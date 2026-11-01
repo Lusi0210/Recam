@@ -3,6 +3,7 @@ import { uploadMedia } from "../api/mediaApi";
 import { MEDIA_TYPE_LABELS } from "../constants/mediaAsset";
 import type { MediaAsset, MediaType } from "../types/mediaAsset";
 import { getErrorMessage } from "../utils/apiError";
+import { useToast } from "../hooks/useToast";
 
 interface MediaUploaderProps {
     listingCaseId: number;
@@ -16,7 +17,7 @@ const MediaUploader = ({ listingCaseId, onUploaded }: MediaUploaderProps) => {
     const [errorMessage, setErrorMessage] = useState<string>('');
     const [isDragging, setIsDragging] = useState<boolean>(false);
     const [progress, setProgress] = useState<number>(0);
-    const [successMessage, setSuccessMessage] = useState<string>('');
+    const { showToast } = useToast();
 
     const handleUpload = async (): Promise<void> => {
         if (files.length === 0 || !mediaType) {
@@ -30,9 +31,7 @@ const MediaUploader = ({ listingCaseId, onUploaded }: MediaUploaderProps) => {
             const uploaded: MediaAsset[] = await uploadMedia(listingCaseId, files, Number(mediaType) as MediaType,setProgress);
             onUploaded(uploaded);
             setFiles([]);
-            {successMessage && (
-                <p className="text-sm text-green-700 bg-green-50 p-2 rounded">{successMessage}</p>
-            )}
+            showToast(`Uploaded ${uploaded.length} file(s)`, 'success');
         } catch (error: unknown) {
             setErrorMessage(getErrorMessage(error, 'Upload failed'));
         } finally {
@@ -46,7 +45,6 @@ const MediaUploader = ({ listingCaseId, onUploaded }: MediaUploaderProps) => {
 
     const addFiles = (newFiles: File[]): void => {
         setFiles((prev) => [...prev, ...newFiles]);
-        setSuccessMessage('');
     };
 
     return (
