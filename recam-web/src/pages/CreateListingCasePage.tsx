@@ -3,8 +3,8 @@ import { PROPERTY_TYPE_LABELS, SALE_CATEGORY_LABELS } from "../constants/listing
 import type { CreateListingCaseRequest, PropertyType, SaleCategory } from "../types/listingCase";
 import { createListingCase } from "../api/listingCaseApi";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import type { ApiResponse } from "../types/api";
+
+import { getErrorMessage } from "../utils/apiError";
 
 
 const inputClass: string =
@@ -55,16 +55,7 @@ const CreateListingCasePage = () => {
             await createListingCase(request)
             navigate('/')
         } catch (error: unknown) {
-            if (axios.isAxiosError<ApiResponse<null>>(error)) {
-                const errors: string[] | null | undefined = error.response?.data?.errors;
-                if (errors && errors.length > 0) {
-                    setErrorMessage(errors.join(', '));
-                } else {
-                    setErrorMessage(error.response?.data?.message ?? 'Failed to create listing case');
-                }
-            } else {
-                setErrorMessage('Something went wrong');
-            }
+            setErrorMessage(getErrorMessage(error, 'Failed to create listing case'));
         } finally {
                 setIsLoading(false);    
         }

@@ -1,9 +1,8 @@
 import { useState, type SyntheticEvent } from "react"
-import type { ApiResponse } from "../types/api";
 import type { LoginRequest } from "../types/auth";
-import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { getErrorMessage } from "../utils/apiError";
 
 export default function LoginPage() {
 
@@ -25,11 +24,7 @@ export default function LoginPage() {
       await authContext.login(request);
       navigate('/')
     } catch(error: unknown){
-      if(axios.isAxiosError<ApiResponse<null>>(error)){
-        setErrorMessage(error.response?.data?.message ?? 'Login failed')
-      } else {
-        setErrorMessage('Something went wrong')
-      }
+      setErrorMessage(getErrorMessage(error, 'Login failed'));
     }
     finally{
       setIsLoading(false);

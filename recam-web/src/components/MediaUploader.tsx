@@ -1,9 +1,8 @@
 import { useState } from "react";
-import axios from "axios";
 import { uploadMedia } from "../api/mediaApi";
 import { MEDIA_TYPE_LABELS } from "../constants/mediaAsset";
 import type { MediaAsset, MediaType } from "../types/mediaAsset";
-import type { ApiResponse } from "../types/api";
+import { getErrorMessage } from "../utils/apiError";
 
 interface MediaUploaderProps {
     listingCaseId: number;
@@ -35,16 +34,7 @@ const MediaUploader = ({ listingCaseId, onUploaded }: MediaUploaderProps) => {
                 <p className="text-sm text-green-700 bg-green-50 p-2 rounded">{successMessage}</p>
             )}
         } catch (error: unknown) {
-            if (axios.isAxiosError<ApiResponse<null>>(error)) {
-                const errors: string[] | null | undefined = error.response?.data?.errors;
-                setErrorMessage(
-                    errors && errors.length > 0
-                        ? errors.join(', ')
-                        : error.response?.data?.message ?? 'Upload failed'
-                );
-            } else {
-                setErrorMessage('Something went wrong');
-            }
+            setErrorMessage(getErrorMessage(error, 'Upload failed'));
         } finally {
             setIsUploading(false);
         }

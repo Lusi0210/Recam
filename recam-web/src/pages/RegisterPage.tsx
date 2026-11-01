@@ -2,8 +2,7 @@ import { useState, type SyntheticEvent } from "react"
 import type { RegisterRequest } from "../types/auth";
 import { register } from "../api/authApi";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
-import type { ApiResponse } from "../types/api";
+import { getErrorMessage } from "../utils/apiError";
 
 const RegisterPage = () =>{
     const [email,setEmail] = useState<string>('');
@@ -32,16 +31,7 @@ const RegisterPage = () =>{
             await register(request);
             navigate('/login')
         } catch (error: unknown) {
-            if (axios.isAxiosError<ApiResponse<null>>(error)) {
-                const errors: string[] | null | undefined = error.response?.data?.errors;
-                if (errors && errors.length > 0) {
-                    setErrorMessage(errors.join(', '));
-                } else {
-                    setErrorMessage(error.response?.data?.message ?? 'Registration failed');
-                }
-            } else {
-                setErrorMessage('Something went wrong');
-            }
+           setErrorMessage(getErrorMessage(error, 'Registration failed'));
         }
         finally{
             setIsLoading(false);

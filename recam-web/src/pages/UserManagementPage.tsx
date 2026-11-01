@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { getAllUsers } from "../api/usersApi";
-import type { ApiResponse, PagedResult } from "../types/api";
+import type { PagedResult } from "../types/api";
 import type { User } from "../types/users";
+import { getErrorMessage } from "../utils/apiError";
 
 const PAGE_SIZE: number = 2;
 
@@ -20,16 +20,7 @@ const UserManagementPage = () => {
                 const response: PagedResult<User> = await getAllUsers(pageNumber, PAGE_SIZE);
                 setResult(response);
             } catch (error: unknown) {
-                if (axios.isAxiosError<ApiResponse<null>>(error)) {
-                    const errors: string[] | null | undefined = error.response?.data?.errors;
-                    if (errors && errors.length > 0) {
-                        setErrorMessage(errors.join(', '));
-                    } else {
-                        setErrorMessage(error.response?.data?.message ?? 'Failed to load users');
-                    }
-                } else {
-                    setErrorMessage('Something went wrong');
-                }
+                setErrorMessage(getErrorMessage(error, 'Failed to load users'));
             } finally {
                 setIsLoading(false);
             }

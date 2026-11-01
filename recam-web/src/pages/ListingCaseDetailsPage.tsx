@@ -2,14 +2,13 @@ import { Link, useParams } from "react-router-dom";
 import { getListingCaseById } from "../api/listingCaseApi";
 import { useEffect, useState } from "react";
 import type { ListingCaseDetailsResponse } from "../types/listingCase";
-import axios from "axios";
-import type { ApiResponse } from "../types/api";
 import { LISTCASE_STATUS_LABELS, LISTCASE_STATUS_STYLES, PROPERTY_TYPE_LABELS, SALE_CATEGORY_LABELS } from "../constants/listingCase";
 import { formatPrice } from "../utils/format";
 import { useAuth } from "../hooks/useAuth";
 import MediaUploader from "../components/MediaUploader";
 import type { MediaAsset } from "../types/mediaAsset";
 import MediaGallery from "../components/MediaGallery";
+import { getErrorMessage } from "../utils/apiError";
 
 const ListingCaseDetailsPage = () => {
     const {id} = useParams<{id : string}>()
@@ -26,16 +25,7 @@ const ListingCaseDetailsPage = () => {
                 const data:ListingCaseDetailsResponse = await getListingCaseById(Number(id));
                 setResult(data);
             } catch (error:unknown) {
-                if (axios.isAxiosError<ApiResponse<null>>(error)) {
-                    const errors: string[] | null | undefined = error.response?.data?.errors;
-                    if (errors && errors.length > 0) {
-                        setErrorMessage(errors.join(', '));
-                    } else {
-                        setErrorMessage(error.response?.data?.message ?? 'Failed to load listing case');
-                    }
-                } else {
-                    setErrorMessage('Something went wrong');
-                }
+                setErrorMessage(getErrorMessage(error, 'Failed to load listing case'));
             } finally {
                 setIsLoading(false);
             }

@@ -1,11 +1,11 @@
 import {  useEffect, useState, type SyntheticEvent } from "react";
 import type { ListcaseStatus, ListingCase, PropertyType, SaleCategory, SortDirection, SortField } from "../types/listingCase";
 import { getListingCases } from "../api/listingCaseApi";
-import type { ApiResponse, PagedResult } from "../types/api";
+import type {  PagedResult } from "../types/api";
 import { LISTCASE_STATUS_LABELS, LISTCASE_STATUS_STYLES, PROPERTY_TYPE_LABELS, SALE_CATEGORY_LABELS } from "../constants/listingCase";
-import axios from "axios";
 import { Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { getErrorMessage } from "../utils/apiError";
 
 const PAGE_SIZE: number = 10;
 
@@ -56,17 +56,7 @@ export default function ListingCasesPage() {
                 });
                 setResult(data);
             } catch (error: unknown) {
-                if (axios.isAxiosError<ApiResponse<null>>(error)) {
-                    const errors: string[] | null | undefined = error.response?.data?.errors;
-                    if (errors && errors.length > 0) {
-                        setErrorMessage(errors.join(', '));
-                    } else {
-                        setErrorMessage(error.response?.data?.message ?? 'Failed to load listing cases');
-                    }
-                } else {
-                    setErrorMessage('Something went wrong');
-                }
-
+                setErrorMessage(getErrorMessage(error, 'Failed to load listing cases'));
             } finally {
                 setIsLoading(false);    
             }

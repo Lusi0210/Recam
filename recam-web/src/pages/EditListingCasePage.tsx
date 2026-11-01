@@ -3,8 +3,7 @@ import { getListingCaseById, updateListingCase } from "../api/listingCaseApi";
 import { useNavigate, useParams } from "react-router-dom";
 import type { ListingCaseDetailsResponse, SaleCategory} from "../types/listingCase";
 import { SALE_CATEGORY_LABELS } from "../constants/listingCase";
-import axios from "axios";
-import type { ApiResponse } from "../types/api";
+import { getErrorMessage } from "../utils/apiError";
 
 const inputClass: string =
     "w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
@@ -40,16 +39,7 @@ const EditListingCasePage = () => {
                 setFloorArea(String(response.floorArea));
                 setSaleCategory(String(response.saleCategory)); 
             } catch (error:unknown) {
-                if (axios.isAxiosError<ApiResponse<null>>(error)) {
-                    const errors: string[] | null | undefined = error.response?.data?.errors;
-                    if (errors && errors.length > 0) {
-                        setLoadError(errors.join(', ')); 
-                    } else {
-                        setLoadError(error.response?.data?.message ?? 'Failed to load listing case');
-                    }
-                } else {
-                    setLoadError('Something went wrong');
-                }
+                setErrorMessage(getErrorMessage(error, 'Failed to load listing case'));
             } finally {
                 setIsLoading(false);
             }
@@ -75,16 +65,7 @@ const EditListingCasePage = () => {
             Number(id));
             navigate(`/listing-cases/${id}`);
         } catch (error:unknown) {
-            if (axios.isAxiosError<ApiResponse<null>>(error)) {
-                const errors: string[] | null | undefined = error.response?.data?.errors;
-                if (errors && errors.length > 0) {
-                    setErrorMessage(errors.join(', '));
-                } else {
-                    setErrorMessage(error.response?.data?.message ?? 'Failed to update listing case');
-                }
-            } else {
-                setErrorMessage('Something went wrong');
-            }
+            setErrorMessage(getErrorMessage(error, 'Failed to update listing case'));
         } finally {
             setIsSaving(false);
         }
