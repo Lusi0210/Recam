@@ -110,7 +110,7 @@ export default function ListingCasesPage() {
 
     return (
         <div>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                 <h1 className="text-2xl font-bold">Listing Cases</h1>
                 {canCreate && (
                     <Link
@@ -128,7 +128,7 @@ export default function ListingCasesPage() {
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
                     placeholder="Search by title or address"
-                    className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="flex-1 min-w-[200px] border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <input
                     type="text"
@@ -214,8 +214,8 @@ export default function ListingCasesPage() {
                                     Address <span className="text-xs">{getSortIcon('city')}</span>
                                 </button>
                             </th>
-                            <th className="px-4 py-3 font-medium">Type</th>
-                            <th className="px-4 py-3 font-medium">Category</th>
+                            <th className="hidden md:table-cell px-4 py-3 font-medium">Type</th>
+                            <th className="hidden md:table-cell px-4 py-3 font-medium">Category</th>
                             <th className="px-4 py-3 font-medium text-right">
                                 <button type="button" onClick={() => handleSort('price')} className="flex items-center gap-1 ml-auto hover:text-gray-900">
                                     Price <span className="text-xs">{getSortIcon('price')}</span>
@@ -246,8 +246,8 @@ export default function ListingCasesPage() {
                                     <td className="px-4 py-3 text-gray-600">
                                         {listingCase.street}, {listingCase.city} {listingCase.state}
                                     </td>
-                                    <td className="px-4 py-3">{PROPERTY_TYPE_LABELS[listingCase.propertyType]}</td>
-                                    <td className="px-4 py-3">{SALE_CATEGORY_LABELS[listingCase.saleCategory]}</td>
+                                    <td className="hidden md:table-cell px-4 py-3">{PROPERTY_TYPE_LABELS[listingCase.propertyType]}</td>
+                                    <td className="hidden md:table-cell px-4 py-3">{SALE_CATEGORY_LABELS[listingCase.saleCategory]}</td>
                                     <td className="px-4 py-3 text-right">{formatPrice(listingCase.price)}</td>
                                     <td className="px-4 py-3">
                                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${LISTCASE_STATUS_STYLES[listingCase.listcaseStatus]}`}>

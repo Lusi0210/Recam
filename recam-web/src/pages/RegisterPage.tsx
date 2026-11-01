@@ -45,7 +45,7 @@ const RegisterPage = () =>{
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
             <form
             onSubmit={handleSubmit}
             className="w-full max-w-sm bg-white p-8 rounded-lg shadow-md flex flex-col gap-4"
@@ -66,13 +66,13 @@ const RegisterPage = () =>{
                 placeholder="Confirm password" autoComplete="new-password" required
                 className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
 
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
                 <input type="text" value={agentFirstName} onChange={(e) => setAgentFirstName(e.target.value)}
                 placeholder="First name" required
-                className="w-1/2 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                className="w-full sm:w-1/2 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 <input type="text" value={agentLastName} onChange={(e) => setAgentLastName(e.target.value)}
                 placeholder="Last name" required
-                className="w-1/2 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                className="w-full sm:w-1/2 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
 
             <input type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)}
