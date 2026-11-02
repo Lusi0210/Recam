@@ -5,4 +5,5 @@
   <Project Path="Remp.Models/Remp.Models.csproj" />
   <Project Path="Remp.Repository/Remp.Repository.csproj" />
   <Project Path="Remp.Service/Remp.Service.csproj" />
+  <Project Path="Remp.Tests/Remp.Tests.csproj" />
 </Solution>
