@@ -1,5 +1,6 @@
 using Remp.Models.Entities;
 using Remp.Models.Enums;
+using Microsoft.AspNetCore.Http;
 
 namespace Remp.Tests.TestHelpers;
 
@@ -89,5 +90,15 @@ public static class TestData
 
         listingCase.MediaAssets.Add(mediaAsset);
         return mediaAsset;
+    }
+
+    public static IFormFile CreateFormFile(string fileName, long length = 1024, string contentType = "image/jpeg")
+    {
+        MemoryStream stream = new MemoryStream(new byte[] { 1, 2, 3, 4 });
+        return new FormFile(stream, 0, length, "files", fileName)
+        {
+            Headers = new HeaderDictionary(),
+            ContentType = contentType,
+        };
     }
 }
