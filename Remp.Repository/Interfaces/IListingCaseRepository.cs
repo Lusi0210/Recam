@@ -1,6 +1,6 @@
-using System;
 using Remp.Common.Responses;
 using Remp.Models.Entities;
+using Remp.Models.Enums;
 using Remp.Models.Filters;
 
 namespace Remp.Repository.Interfaces;
@@ -16,4 +16,6 @@ public interface IListingCaseRepository
     Task<ListingCase?> GetListingCaseWithContactsAsync(int id);
     Task<ListingCase?> GetListingCaseWithAgentAsync(int id);
     Task<ListingCase?> GetListingCaseWithMediaAndAgentsAsync(int id);
+    Task<Dictionary<ListcaseStatus, int>> GetStatusCountsAsync(string userId, string role);
+    Task<Dictionary<int, string>> GetTitlesAsync(string userId, string role);
 }

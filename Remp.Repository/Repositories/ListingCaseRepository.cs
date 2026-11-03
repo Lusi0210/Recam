@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Remp.Common.Responses;
 using Remp.DataAccess.Data;
+using Remp.Models.Constants;
 using Remp.Models.Entities;
+using Remp.Models.Enums;
 using Remp.Models.Filters;
 using Remp.Repository.Interfaces;
 
@@ -71,6 +73,32 @@ public class ListingCaseRepository : IListingCaseRepository
         };
 
         return ordered.ThenBy(l => l.Id);
+    }
+
+    private IQueryable<ListingCase> GetAccessibleListingCases(string userId, string role)
+    {
+        IQueryable<ListingCase> query = _dbContext.ListingCases
+            .AsNoTracking()
+            .Where(l => !l.IsDeleted);
+
+        return role == RoleNames.Agent
+            ? query.Where(l => l.Agents.Any(a => a.Id == userId))
+            : query.Where(l => l.UserId == userId);
+    }
+
+    public async Task<Dictionary<ListcaseStatus, int>> GetStatusCountsAsync(string userId, string role)
+    {
+        return await GetAccessibleListingCases(userId, role)
+            .GroupBy(l => l.ListcaseStatus)
+            .Select(g => new { Status = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Status, x => x.Count);
+    }
+
+    public async Task<Dictionary<int, string>> GetTitlesAsync(string userId, string role)
+    {
+        return await GetAccessibleListingCases(userId, role)
+            .Select(l => new { l.Id, l.Title })
+            .ToDictionaryAsync(x => x.Id, x => x.Title);
     }
 
     public void Add(ListingCase listingCase)
