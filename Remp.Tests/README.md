@@ -20,11 +20,22 @@ From the solution root:
 dotnet test
 ```
 
-To collect code coverage (the `coverlet.collector` package is included by the xUnit template):
+## Code coverage
+
+Coverage is collected with `coverlet.collector` and turned into an HTML report with ReportGenerator.
 
 ```bash
-dotnet test --collect:"XPlat Code Coverage"
+# one-time install
+dotnet tool install -g dotnet-reportgenerator-globaltool
+
+# from the Remp.Tests folder
+dotnet test --collect:"XPlat Code Coverage" --results-directory ./TestResults
+reportgenerator -reports:"./TestResults/**/coverage.cobertura.xml" -targetdir:"./TestResults/CoverageReport" -reporttypes:Html
 ```
+
+Open `TestResults/CoverageReport/index.html` in a browser. `TestResults/` is git-ignored.
+
+The tests target the service layer, so the classes to check are `ListingCaseService` and `MediaAssetService`.
 
 ## Project structure
 

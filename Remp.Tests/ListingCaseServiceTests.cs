@@ -139,6 +139,40 @@ public class ListingCaseServiceTests
             It.IsAny<bool>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
     }
 
+        [Fact]
+    public async Task CreateListingCaseAsync_WhenTitleIsEmpty_ThrowsBadRequestAndDoesNotSave()
+    {
+        //Arrange
+        CreateListingCaseDto dto = CreateValidDto();
+        dto.Title = "";
+
+        //Act
+        BadRequestException exception = await Assert.ThrowsAsync<BadRequestException>(
+            () => _listingCaseService.CreateListingCaseAsync(dto, TestData.OwnerId, TestData.IpAddress));
+
+        //Assert
+        exception.Errors.Should().Contain("Title cannot be empty!");
+        _mockListingCaseRepository.Verify(m => m.Add(It.IsAny<ListingCase>()), Times.Never);
+        VerifyNothingSavedOrLogged();
+    }
+
+    [Fact]
+    public async Task CreateListingCaseAsync_WhenPriceIsZero_ThrowsBadRequestAndDoesNotSave()
+    {
+        //Arrange
+        CreateListingCaseDto dto = CreateValidDto();
+        dto.Price = 0;
+
+        //Act
+        BadRequestException exception = await Assert.ThrowsAsync<BadRequestException>(
+            () => _listingCaseService.CreateListingCaseAsync(dto, TestData.OwnerId, TestData.IpAddress));
+
+        //Assert
+        exception.Errors.Should().Contain("Price must be greater than 0");
+        _mockListingCaseRepository.Verify(m => m.Add(It.IsAny<ListingCase>()), Times.Never);
+        VerifyNothingSavedOrLogged();
+    }
+
         // ---------- External storage mock (IBlobStorageService) ----------
 
     [Fact]
@@ -252,6 +286,60 @@ public class ListingCaseServiceTests
         //Assert
         exception.Errors.Should().Contain("FloorArea must be greater than 0");
         _mockListingCaseRepository.Verify(m => m.GetListingCaseAsync(It.IsAny<int>()), Times.Never);
+        VerifyNothingSavedOrLogged();
+    }
+
+
+        // ---------- DeleteListingCaseAsync ----------
+
+    [Fact]
+    public async Task DeleteListingCaseAsync_WhenOwnerDeletes_SoftDeletesListingCaseAndItsMedia()
+    {
+        //Arrange
+        ListingCase listingCase = TestData.CreateListingCase();
+        MediaAsset photo = TestData.AddMediaAsset(listingCase, 1);
+        MediaAsset floorPlan = TestData.AddMediaAsset(listingCase, 2, MediaType.FloorPlan);
+        _mockListingCaseRepository.Setup(m => m.GetListingCaseWithMediaAssetAsync(1)).ReturnsAsync(listingCase);
+
+        //Act
+        await _listingCaseService.DeleteListingCaseAsync(1, TestData.OwnerId, TestData.IpAddress);
+
+        //Assert
+        listingCase.IsDeleted.Should().BeTrue();
+        photo.IsDeleted.Should().BeTrue();
+        floorPlan.IsDeleted.Should().BeTrue();
+        _mockUnitOfWork.Verify(m => m.SaveChangesAsync(), Times.Once);
+        _mockActivityLog.Verify(m => m.LogListingCaseAsync(
+            ListingCaseActivityType.Delete, 1, TestData.OwnerId, true, It.IsAny<string>(), TestData.IpAddress), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteListingCaseAsync_WhenListingCaseDoesNotExist_ThrowsNotFound()
+    {
+        //Arrange
+        _mockListingCaseRepository.Setup(m => m.GetListingCaseWithMediaAssetAsync(999)).ReturnsAsync((ListingCase?)null);
+
+        //Act & Assert
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => _listingCaseService.DeleteListingCaseAsync(999, TestData.OwnerId, TestData.IpAddress));
+
+        VerifyNothingSavedOrLogged();
+    }
+
+    [Fact]
+    public async Task DeleteListingCaseAsync_WhenUserIsNotOwner_ThrowsForbiddenAndDoesNotDelete()
+    {
+        //Arrange
+        ListingCase listingCase = TestData.CreateListingCase();
+        MediaAsset photo = TestData.AddMediaAsset(listingCase, 1);
+        _mockListingCaseRepository.Setup(m => m.GetListingCaseWithMediaAssetAsync(1)).ReturnsAsync(listingCase);
+
+        //Act & Assert
+        await Assert.ThrowsAsync<ForbiddenException>(
+            () => _listingCaseService.DeleteListingCaseAsync(1, TestData.OtherUserId, TestData.IpAddress));
+
+        listingCase.IsDeleted.Should().BeFalse();
+        photo.IsDeleted.Should().BeFalse();
         VerifyNothingSavedOrLogged();
     }
 
