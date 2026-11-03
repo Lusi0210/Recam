@@ -56,6 +56,16 @@ public class MediaAssetServiceTests
         return listingCase;
     }
 
+    private ListingCase SetupListingCaseWithMediaAndAgent()
+    {
+        ListingCase listingCase = TestData.AssignAgent(TestData.CreateListingCase());
+        TestData.AddMediaAsset(listingCase, 1);
+        TestData.AddMediaAsset(listingCase, 2);
+        TestData.AddMediaAsset(listingCase, 3);
+        _mockListingCaseRepository.Setup(m => m.GetListingCaseWithMediaAndAgentsAsync(1)).ReturnsAsync(listingCase);
+        return listingCase;
+    }
+
     private void VerifyNothingSavedOrLogged()
     {
         _mockUnitOfWork.Verify(m => m.SaveChangesAsync(), Times.Never);
@@ -225,6 +235,81 @@ public class MediaAssetServiceTests
             It.IsAny<bool>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
     }
 
+
+    [Fact]
+    public async Task UploadMediaAssetsAsync_WhenNoFilesAreSent_ThrowsBadRequest()
+    {
+        //Arrange
+        SetupListingCaseForUpload();
+
+        //Act
+        BadRequestException exception = await Assert.ThrowsAsync<BadRequestException>(
+            () => _mediaAssetService.UploadMediaAssetsAsync(1, MediaType.Photos, new List<IFormFile>(), TestData.OwnerId, TestData.IpAddress));
+
+        //Assert
+        exception.Message.Should().Be("At least one file is required.");
+        VerifyNothingUploadedSavedOrLogged();
+    }
+
+    [Fact]
+    public async Task UploadMediaAssetsAsync_WhenMultipleFloorPlansAreSent_ThrowsBadRequest()
+    {
+        //Arrange
+        SetupListingCaseForUpload();
+        List<IFormFile> files = new List<IFormFile>
+        {
+            TestData.CreateFormFile("plan-1.jpg"),
+            TestData.CreateFormFile("plan-2.jpg"),
+        };
+
+        //Act
+        BadRequestException exception = await Assert.ThrowsAsync<BadRequestException>(
+            () => _mediaAssetService.UploadMediaAssetsAsync(1, MediaType.FloorPlan, files, TestData.OwnerId, TestData.IpAddress));
+
+        //Assert
+        exception.Message.Should().Be("Only one file can be uploaded for FloorPlan.");
+        VerifyNothingUploadedSavedOrLogged();
+    }
+
+    [Fact]
+    public async Task UploadMediaAssetsAsync_WhenMediaTypeIsNotDefined_ThrowsBadRequest()
+    {
+        //Arrange
+        SetupListingCaseForUpload();
+        List<IFormFile> files = new List<IFormFile> { TestData.CreateFormFile("front.jpg") };
+
+        //Act
+        BadRequestException exception = await Assert.ThrowsAsync<BadRequestException>(
+            () => _mediaAssetService.UploadMediaAssetsAsync(1, (MediaType)99, files, TestData.OwnerId, TestData.IpAddress));
+
+        //Assert
+        exception.Message.Should().Be("Invalid media type.");
+        VerifyNothingUploadedSavedOrLogged();
+    }
+
+    [Fact]
+    public async Task UploadMediaAssetsAsync_WhenSecondUploadFails_DeletesOnlyTheFirstBlob()
+    {
+        //Arrange
+        SetupListingCaseForUpload();
+        _mockBlobStorage
+            .SetupSequence(m => m.UploadAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(Task.CompletedTask)
+            .ThrowsAsync(new InvalidOperationException("Storage unavailable"));
+        List<IFormFile> files = new List<IFormFile>
+        {
+            TestData.CreateFormFile("front.jpg"),
+            TestData.CreateFormFile("back.jpg"),
+        };
+
+        //Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _mediaAssetService.UploadMediaAssetsAsync(1, MediaType.Photos, files, TestData.OwnerId, TestData.IpAddress));
+
+        _mockBlobStorage.Verify(m => m.DeleteAsync(It.IsAny<string>()), Times.Once);
+        VerifyNothingSavedOrLogged();
+    }
+
         // ---------- GetListingCaseMediaAssetsAsync ----------
 
     [Fact]
@@ -360,6 +445,144 @@ public class MediaAssetServiceTests
             () => _mediaAssetService.DeleteMediaAssetAsync(1, TestData.AgentId, TestData.IpAddress));
 
         mediaAsset.IsDeleted.Should().BeFalse();
+        VerifyNothingSavedOrLogged();
+    }
+
+
+        // ---------- AgentSelectMediaAsync ----------
+
+    [Fact]
+    public async Task AgentSelectMediaAsync_WhenAssignedAgentSelectsPhotos_MarksOnlyThoseAsSelected()
+    {
+        //Arrange
+        ListingCase listingCase = SetupListingCaseWithMediaAndAgent();
+        listingCase.MediaAssets.Single(m => m.Id == 3).IsSelected = true;
+        AgentSelectMediaDto dto = new AgentSelectMediaDto { MediaAssetsId = new List<int> { 1, 2 } };
+
+        //Act
+        AgentSelectMediaResponseDto result = await _mediaAssetService.AgentSelectMediaAsync(
+            TestData.AgentId, 1, dto, TestData.IpAddress);
+
+        //Assert
+        result.Id.Should().Be(1);
+        result.MediaAssetsId.Should().BeEquivalentTo(new List<int> { 1, 2 });
+        listingCase.MediaAssets.Where(m => m.IsSelected).Select(m => m.Id).Should().BeEquivalentTo(new List<int> { 1, 2 });
+        _mockUnitOfWork.Verify(m => m.SaveChangesAsync(), Times.Once);
+        _mockActivityLog.Verify(m => m.LogListingCaseAsync(
+            ListingCaseActivityType.SelectMedia, 1, TestData.AgentId, true, "Selected media: 1, 2", TestData.IpAddress), Times.Once);
+    }
+
+    [Fact]
+    public async Task AgentSelectMediaAsync_WhenListIsEmpty_ClearsAllSelections()
+    {
+        //Arrange
+        ListingCase listingCase = SetupListingCaseWithMediaAndAgent();
+        foreach (MediaAsset mediaAsset in listingCase.MediaAssets)
+        {
+            mediaAsset.IsSelected = true;
+        }
+        AgentSelectMediaDto dto = new AgentSelectMediaDto { MediaAssetsId = new List<int>() };
+
+        //Act
+        await _mediaAssetService.AgentSelectMediaAsync(TestData.AgentId, 1, dto, TestData.IpAddress);
+
+        //Assert
+        listingCase.MediaAssets.Should().OnlyContain(m => !m.IsSelected);
+        _mockActivityLog.Verify(m => m.LogListingCaseAsync(
+            ListingCaseActivityType.SelectMedia, 1, TestData.AgentId, true, "Cleared all selected media", TestData.IpAddress), Times.Once);
+    }
+
+    [Fact]
+    public async Task AgentSelectMediaAsync_WhenOwnerTriesToSelect_ThrowsForbidden()
+    {
+        //Arrange
+        ListingCase listingCase = SetupListingCaseWithMediaAndAgent();
+        AgentSelectMediaDto dto = new AgentSelectMediaDto { MediaAssetsId = new List<int> { 1 } };
+
+        //Act & Assert
+        await Assert.ThrowsAsync<ForbiddenException>(
+            () => _mediaAssetService.AgentSelectMediaAsync(TestData.OwnerId, 1, dto, TestData.IpAddress));
+
+        listingCase.MediaAssets.Should().OnlyContain(m => !m.IsSelected);
+        VerifyNothingSavedOrLogged();
+    }
+
+    [Fact]
+    public async Task AgentSelectMediaAsync_WhenListingCaseDoesNotExist_ThrowsNotFound()
+    {
+        //Arrange
+        _mockListingCaseRepository.Setup(m => m.GetListingCaseWithMediaAndAgentsAsync(999)).ReturnsAsync((ListingCase?)null);
+        AgentSelectMediaDto dto = new AgentSelectMediaDto { MediaAssetsId = new List<int> { 1 } };
+
+        //Act & Assert
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => _mediaAssetService.AgentSelectMediaAsync(TestData.AgentId, 999, dto, TestData.IpAddress));
+
+        VerifyNothingSavedOrLogged();
+    }
+
+    [Fact]
+    public async Task AgentSelectMediaAsync_WhenMediaIsNotInListingCase_ThrowsBadRequest()
+    {
+        //Arrange
+        ListingCase listingCase = SetupListingCaseWithMediaAndAgent();
+        AgentSelectMediaDto dto = new AgentSelectMediaDto { MediaAssetsId = new List<int> { 1, 42 } };
+
+        //Act
+        BadRequestException exception = await Assert.ThrowsAsync<BadRequestException>(
+            () => _mediaAssetService.AgentSelectMediaAsync(TestData.AgentId, 1, dto, TestData.IpAddress));
+
+        //Assert
+        exception.Message.Should().Be("Media 42 do not belong to this listing case.");
+        listingCase.MediaAssets.Should().OnlyContain(m => !m.IsSelected);
+        VerifyNothingSavedOrLogged();
+    }
+
+    [Fact]
+    public async Task AgentSelectMediaAsync_WhenSelectingNonPhoto_ThrowsBadRequest()
+    {
+        //Arrange
+        ListingCase listingCase = SetupListingCaseWithMediaAndAgent();
+        TestData.AddMediaAsset(listingCase, 4, MediaType.FloorPlan);
+        AgentSelectMediaDto dto = new AgentSelectMediaDto { MediaAssetsId = new List<int> { 1, 4 } };
+
+        //Act
+        BadRequestException exception = await Assert.ThrowsAsync<BadRequestException>(
+            () => _mediaAssetService.AgentSelectMediaAsync(TestData.AgentId, 1, dto, TestData.IpAddress));
+
+        //Assert
+        exception.Message.Should().Be("Only photos can be selected.");
+        VerifyNothingSavedOrLogged();
+    }
+
+    [Fact]
+    public async Task AgentSelectMediaAsync_WhenIdsAreDuplicated_ThrowsBadRequestBeforeLoadingListingCase()
+    {
+        //Arrange
+        AgentSelectMediaDto dto = new AgentSelectMediaDto { MediaAssetsId = new List<int> { 1, 1 } };
+
+        //Act
+        BadRequestException exception = await Assert.ThrowsAsync<BadRequestException>(
+            () => _mediaAssetService.AgentSelectMediaAsync(TestData.AgentId, 1, dto, TestData.IpAddress));
+
+        //Assert
+        exception.Errors.Should().Contain("Duplicate media ids are not allowed.");
+        _mockListingCaseRepository.Verify(m => m.GetListingCaseWithMediaAndAgentsAsync(It.IsAny<int>()), Times.Never);
+        VerifyNothingSavedOrLogged();
+    }
+
+    [Fact]
+    public async Task AgentSelectMediaAsync_WhenMoreThan10Ids_ThrowsBadRequest()
+    {
+        //Arrange
+        AgentSelectMediaDto dto = new AgentSelectMediaDto { MediaAssetsId = Enumerable.Range(1, 11).ToList() };
+
+        //Act
+        BadRequestException exception = await Assert.ThrowsAsync<BadRequestException>(
+            () => _mediaAssetService.AgentSelectMediaAsync(TestData.AgentId, 1, dto, TestData.IpAddress));
+
+        //Assert
+        exception.Errors.Should().Contain("You can select at most 10 images.");
         VerifyNothingSavedOrLogged();
     }
 }
