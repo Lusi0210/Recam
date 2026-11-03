@@ -70,6 +70,29 @@ public class ListingCaseServiceTests
         };
     }
 
+        private static UpdateListingCaseDto CreateValidUpdateDto()
+    {
+        return new UpdateListingCaseDto
+        {
+            Title = "Updated House",
+            Description = "Updated description",
+            Price = 1250000m,
+            Bedrooms = 4,
+            Bathrooms = 3,
+            Garages = 2,
+            FloorArea = 200,
+            SaleCategory = SaleCategory.Auction,
+        };
+    }
+
+    private void VerifyNothingSavedOrLogged()
+    {
+        _mockUnitOfWork.Verify(m => m.SaveChangesAsync(), Times.Never);
+        _mockActivityLog.Verify(m => m.LogListingCaseAsync(
+            It.IsAny<ListingCaseActivityType>(), It.IsAny<int>(), It.IsAny<string?>(),
+            It.IsAny<bool>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
+    }
+
     //Naming pattern for test method
     //What_When_Should
     [Fact]
@@ -153,5 +176,179 @@ public class ListingCaseServiceTests
             () => _listingCaseService.GetListingCaseDetailsByIdAsync(1, TestData.OtherUserId));
 
         _mockBlobStorage.Verify(m => m.GetReadUrl(It.IsAny<string>()), Times.Never);
+    }
+
+
+        // ---------- UpdateListingCaseAsync ----------
+
+    [Fact]
+    public async Task UpdateListingCaseAsync_WhenOwnerSendsValidDto_UpdatesFieldsSavesAndLogs()
+    {
+        //Arrange
+        ListingCase listingCase = TestData.CreateListingCase();
+        _mockListingCaseRepository.Setup(m => m.GetListingCaseAsync(1)).ReturnsAsync(listingCase);
+        UpdateListingCaseDto dto = CreateValidUpdateDto();
+
+        //Act
+        UpdateListingCaseResponseDto result = await _listingCaseService.UpdateListingCaseAsync(
+            1, dto, TestData.OwnerId, TestData.IpAddress);
+
+        //Assert
+        result.Title.Should().Be("Updated House");
+        result.Price.Should().Be(1250000m);
+        result.SaleCategory.Should().Be(SaleCategory.Auction);
+
+        listingCase.Title.Should().Be("Updated House");
+        listingCase.Bedrooms.Should().Be(4);
+        listingCase.Street.Should().Be("1 Test Street");
+
+        _mockUnitOfWork.Verify(m => m.SaveChangesAsync(), Times.Once);
+        _mockActivityLog.Verify(m => m.LogListingCaseAsync(
+            ListingCaseActivityType.Update, 1, TestData.OwnerId, true, It.IsAny<string>(), TestData.IpAddress), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateListingCaseAsync_WhenListingCaseDoesNotExist_ThrowsNotFound()
+    {
+        //Arrange
+        _mockListingCaseRepository.Setup(m => m.GetListingCaseAsync(999)).ReturnsAsync((ListingCase?)null);
+
+        //Act & Assert
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => _listingCaseService.UpdateListingCaseAsync(999, CreateValidUpdateDto(), TestData.OwnerId, TestData.IpAddress));
+
+        VerifyNothingSavedOrLogged();
+    }
+
+    [Fact]
+    public async Task UpdateListingCaseAsync_WhenUserIsNotOwner_ThrowsForbiddenAndKeepsData()
+    {
+        //Arrange
+        ListingCase listingCase = TestData.CreateListingCase();
+        _mockListingCaseRepository.Setup(m => m.GetListingCaseAsync(1)).ReturnsAsync(listingCase);
+
+        //Act & Assert
+        await Assert.ThrowsAsync<ForbiddenException>(
+            () => _listingCaseService.UpdateListingCaseAsync(1, CreateValidUpdateDto(), TestData.OtherUserId, TestData.IpAddress));
+
+        listingCase.Title.Should().Be("Test House");
+        VerifyNothingSavedOrLogged();
+    }
+
+    [Fact]
+    public async Task UpdateListingCaseAsync_WhenDtoIsInvalid_ThrowsBadRequestBeforeLoadingListingCase()
+    {
+        //Arrange
+        UpdateListingCaseDto dto = CreateValidUpdateDto();
+        dto.FloorArea = 0;
+
+        //Act
+        BadRequestException exception = await Assert.ThrowsAsync<BadRequestException>(
+            () => _listingCaseService.UpdateListingCaseAsync(1, dto, TestData.OwnerId, TestData.IpAddress));
+
+        //Assert
+        exception.Errors.Should().Contain("FloorArea must be greater than 0");
+        _mockListingCaseRepository.Verify(m => m.GetListingCaseAsync(It.IsAny<int>()), Times.Never);
+        VerifyNothingSavedOrLogged();
+    }
+
+        // ---------- UpdateListingCaseStatusByIdAsync ----------
+
+    [Theory]
+    [InlineData(ListcaseStatus.Created, ListcaseStatus.Pending)]
+    [InlineData(ListcaseStatus.Pending, ListcaseStatus.InReview)]
+    [InlineData(ListcaseStatus.InReview, ListcaseStatus.Delivered)]
+    [InlineData(ListcaseStatus.Pending, ListcaseStatus.Created)]
+    [InlineData(ListcaseStatus.InReview, ListcaseStatus.Pending)]
+    public async Task UpdateListingCaseStatusByIdAsync_WhenTransitionIsAllowed_UpdatesStatusAndLogs(
+        ListcaseStatus from, ListcaseStatus to)
+    {
+        //Arrange
+        ListingCase listingCase = TestData.CreateListingCase(status: from);
+        _mockListingCaseRepository.Setup(m => m.GetListingCaseAsync(1)).ReturnsAsync(listingCase);
+        UpdateListingCaseStatusDto dto = new UpdateListingCaseStatusDto { Status = to };
+
+        //Act
+        UpdateListingCaseStatusResponseDto result = await _listingCaseService.UpdateListingCaseStatusByIdAsync(
+            dto, 1, TestData.OwnerId, TestData.IpAddress);
+
+        //Assert
+        result.Id.Should().Be(1);
+        result.PreviousStatus.Should().Be(from);
+        result.CurrentStatus.Should().Be(to);
+        listingCase.ListcaseStatus.Should().Be(to);
+        _mockUnitOfWork.Verify(m => m.SaveChangesAsync(), Times.Once);
+        _mockActivityLog.Verify(m => m.LogListingCaseAsync(
+            ListingCaseActivityType.StatusChange, 1, TestData.OwnerId, true, It.IsAny<string>(), TestData.IpAddress), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(ListcaseStatus.Created, ListcaseStatus.InReview)]
+    [InlineData(ListcaseStatus.Created, ListcaseStatus.Delivered)]
+    [InlineData(ListcaseStatus.Pending, ListcaseStatus.Delivered)]
+    [InlineData(ListcaseStatus.InReview, ListcaseStatus.Created)]
+    [InlineData(ListcaseStatus.Delivered, ListcaseStatus.InReview)]
+    [InlineData(ListcaseStatus.Delivered, ListcaseStatus.Created)]
+    [InlineData(ListcaseStatus.Created, ListcaseStatus.Created)]
+    public async Task UpdateListingCaseStatusByIdAsync_WhenTransitionIsNotAllowed_ThrowsBadRequestAndKeepsStatus(
+        ListcaseStatus from, ListcaseStatus to)
+    {
+        //Arrange
+        ListingCase listingCase = TestData.CreateListingCase(status: from);
+        _mockListingCaseRepository.Setup(m => m.GetListingCaseAsync(1)).ReturnsAsync(listingCase);
+        UpdateListingCaseStatusDto dto = new UpdateListingCaseStatusDto { Status = to };
+
+        //Act & Assert
+        await Assert.ThrowsAsync<BadRequestException>(
+            () => _listingCaseService.UpdateListingCaseStatusByIdAsync(dto, 1, TestData.OwnerId, TestData.IpAddress));
+
+        listingCase.ListcaseStatus.Should().Be(from);
+        VerifyNothingSavedOrLogged();
+    }
+
+    [Fact]
+    public async Task UpdateListingCaseStatusByIdAsync_WhenStatusIsNotDefined_ThrowsBadRequest()
+    {
+        //Arrange
+        UpdateListingCaseStatusDto dto = new UpdateListingCaseStatusDto { Status = (ListcaseStatus)99 };
+
+        //Act
+        BadRequestException exception = await Assert.ThrowsAsync<BadRequestException>(
+            () => _listingCaseService.UpdateListingCaseStatusByIdAsync(dto, 1, TestData.OwnerId, TestData.IpAddress));
+
+        //Assert
+        exception.Errors.Should().Contain("Invalid status");
+        _mockListingCaseRepository.Verify(m => m.GetListingCaseAsync(It.IsAny<int>()), Times.Never);
+        VerifyNothingSavedOrLogged();
+    }
+
+    [Fact]
+    public async Task UpdateListingCaseStatusByIdAsync_WhenListingCaseDoesNotExist_ThrowsNotFound()
+    {
+        //Arrange
+        _mockListingCaseRepository.Setup(m => m.GetListingCaseAsync(999)).ReturnsAsync((ListingCase?)null);
+        UpdateListingCaseStatusDto dto = new UpdateListingCaseStatusDto { Status = ListcaseStatus.Pending };
+
+        //Act & Assert
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => _listingCaseService.UpdateListingCaseStatusByIdAsync(dto, 999, TestData.OwnerId, TestData.IpAddress));
+
+        VerifyNothingSavedOrLogged();
+    }
+
+    [Fact]
+    public async Task UpdateListingCaseStatusByIdAsync_WhenAgentTriesToChangeStatus_ThrowsForbidden()
+    {
+        //Arrange
+        ListingCase listingCase = TestData.AssignAgent(TestData.CreateListingCase());
+        _mockListingCaseRepository.Setup(m => m.GetListingCaseAsync(1)).ReturnsAsync(listingCase);
+        UpdateListingCaseStatusDto dto = new UpdateListingCaseStatusDto { Status = ListcaseStatus.Pending };
+
+        //Act & Assert
+        await Assert.ThrowsAsync<ForbiddenException>(
+            () => _listingCaseService.UpdateListingCaseStatusByIdAsync(dto, 1, TestData.AgentId, TestData.IpAddress));
+
+        listingCase.ListcaseStatus.Should().Be(ListcaseStatus.Created);
+        VerifyNothingSavedOrLogged();
     }
 }
