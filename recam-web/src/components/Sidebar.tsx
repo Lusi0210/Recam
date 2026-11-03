@@ -9,7 +9,8 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
-    { label: 'Listing Cases', path: '/' },
+    { label: 'Dashboard', path: '/' },
+    { label: 'Listing Cases', path: '/listing-cases' },
     { label: 'Users', path: '/users', roles: ['PhotographyCompany'] },
 ];
 

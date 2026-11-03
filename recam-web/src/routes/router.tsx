@@ -11,6 +11,7 @@ import UserManagementPage from '../pages/UserManagementPage';
 import CreateListingCasePage from '../pages/CreateListingCasePage';
 import ListingCaseDetailsPage from '../pages/ListingCaseDetailsPage';
 import EditListingCasePage from '../pages/EditListingCasePage';
+import DashboardPage from '../pages/DashboardPage';
 
 export const router = createBrowserRouter([
   {
@@ -21,7 +22,8 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     ),
     children: [
-      { index: true, element: <ListingCasesPage /> },
+      { index: true, element: <DashboardPage /> },
+      { path: 'listing-cases', element: <ListingCasesPage /> },
       {
         path: 'listing-cases/new',
         element: (
