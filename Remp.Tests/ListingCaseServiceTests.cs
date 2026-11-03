@@ -91,6 +91,9 @@ public class ListingCaseServiceTests
         _mockActivityLog.Verify(m => m.LogListingCaseAsync(
             It.IsAny<ListingCaseActivityType>(), It.IsAny<int>(), It.IsAny<string?>(),
             It.IsAny<bool>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
+        _mockActivityLog.Verify(m => m.LogPhotographyCompanyAsync(
+            It.IsAny<PhotographyCompanyActivityType>(), It.IsAny<string>(), It.IsAny<string?>(),
+            It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<string?>()), Times.Never);
     }
 
     //Naming pattern for test method
@@ -349,6 +352,135 @@ public class ListingCaseServiceTests
             () => _listingCaseService.UpdateListingCaseStatusByIdAsync(dto, 1, TestData.AgentId, TestData.IpAddress));
 
         listingCase.ListcaseStatus.Should().Be(ListcaseStatus.Created);
+        VerifyNothingSavedOrLogged();
+    }
+
+        // ---------- AddAgentToListingCaseAsync ----------
+
+    [Fact]
+    public async Task AddAgentToListingCaseAsync_WhenAgentBelongsToCompany_AssignsAgentAndLogs()
+    {
+        //Arrange
+        ListingCase listingCase = TestData.CreateListingCase();
+        Agent agent = TestData.CreateAgent();
+        _mockListingCaseRepository.Setup(m => m.GetListingCaseWithAgentAsync(1)).ReturnsAsync(listingCase);
+        _mockAgentRepository.Setup(m => m.GetAgentByIdAsync(TestData.AgentId)).ReturnsAsync(agent);
+        AddAgentToListingCaseDto dto = new AddAgentToListingCaseDto { Id = TestData.AgentId };
+
+        //Act
+        AddAgentToListingCaseResponseDto result = await _listingCaseService.AddAgentToListingCaseAsync(
+            dto, TestData.OwnerId, 1, TestData.IpAddress, TestData.OwnerEmail);
+
+        //Assert
+        result.Id.Should().Be(TestData.AgentId);
+        result.ListingCaseId.Should().Be(1);
+        listingCase.Agents.Should().Contain(agent);
+        _mockUnitOfWork.Verify(m => m.SaveChangesAsync(), Times.Once);
+        _mockActivityLog.Verify(m => m.LogPhotographyCompanyAsync(
+            PhotographyCompanyActivityType.AddAgentToListingCase, TestData.OwnerEmail, TestData.OwnerId,
+            true, It.IsAny<string>(), TestData.IpAddress), Times.Once);
+    }
+
+    [Fact]
+    public async Task AddAgentToListingCaseAsync_WhenAgentIdIsEmpty_ThrowsBadRequest()
+    {
+        //Arrange
+        AddAgentToListingCaseDto dto = new AddAgentToListingCaseDto { Id = "" };
+
+        //Act
+        BadRequestException exception = await Assert.ThrowsAsync<BadRequestException>(
+            () => _listingCaseService.AddAgentToListingCaseAsync(dto, TestData.OwnerId, 1, TestData.IpAddress, TestData.OwnerEmail));
+
+        //Assert
+        exception.Errors.Should().Contain("Agent id can not be empty!");
+        _mockListingCaseRepository.Verify(m => m.GetListingCaseWithAgentAsync(It.IsAny<int>()), Times.Never);
+        VerifyNothingSavedOrLogged();
+    }
+
+    [Fact]
+    public async Task AddAgentToListingCaseAsync_WhenListingCaseDoesNotExist_ThrowsNotFound()
+    {
+        //Arrange
+        _mockListingCaseRepository.Setup(m => m.GetListingCaseWithAgentAsync(999)).ReturnsAsync((ListingCase?)null);
+        AddAgentToListingCaseDto dto = new AddAgentToListingCaseDto { Id = TestData.AgentId };
+
+        //Act & Assert
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => _listingCaseService.AddAgentToListingCaseAsync(dto, TestData.OwnerId, 999, TestData.IpAddress, TestData.OwnerEmail));
+
+        _mockAgentRepository.Verify(m => m.GetAgentByIdAsync(It.IsAny<string>()), Times.Never);
+        VerifyNothingSavedOrLogged();
+    }
+
+    [Fact]
+    public async Task AddAgentToListingCaseAsync_WhenUserIsNotOwner_ThrowsForbidden()
+    {
+        //Arrange
+        ListingCase listingCase = TestData.CreateListingCase();
+        _mockListingCaseRepository.Setup(m => m.GetListingCaseWithAgentAsync(1)).ReturnsAsync(listingCase);
+        AddAgentToListingCaseDto dto = new AddAgentToListingCaseDto { Id = TestData.AgentId };
+
+        //Act & Assert
+        await Assert.ThrowsAsync<ForbiddenException>(
+            () => _listingCaseService.AddAgentToListingCaseAsync(dto, TestData.OtherUserId, 1, TestData.IpAddress, TestData.OwnerEmail));
+
+        listingCase.Agents.Should().BeEmpty();
+        VerifyNothingSavedOrLogged();
+    }
+
+    [Fact]
+    public async Task AddAgentToListingCaseAsync_WhenAgentDoesNotExist_ThrowsNotFound()
+    {
+        //Arrange
+        ListingCase listingCase = TestData.CreateListingCase();
+        _mockListingCaseRepository.Setup(m => m.GetListingCaseWithAgentAsync(1)).ReturnsAsync(listingCase);
+        _mockAgentRepository.Setup(m => m.GetAgentByIdAsync("missing-agent")).ReturnsAsync((Agent?)null);
+        AddAgentToListingCaseDto dto = new AddAgentToListingCaseDto { Id = "missing-agent" };
+
+        //Act & Assert
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => _listingCaseService.AddAgentToListingCaseAsync(dto, TestData.OwnerId, 1, TestData.IpAddress, TestData.OwnerEmail));
+
+        listingCase.Agents.Should().BeEmpty();
+        VerifyNothingSavedOrLogged();
+    }
+
+    [Fact]
+    public async Task AddAgentToListingCaseAsync_WhenAgentIsAlreadyAssigned_ThrowsBadRequest()
+    {
+        //Arrange
+        ListingCase listingCase = TestData.AssignAgent(TestData.CreateListingCase());
+        _mockListingCaseRepository.Setup(m => m.GetListingCaseWithAgentAsync(1)).ReturnsAsync(listingCase);
+        _mockAgentRepository.Setup(m => m.GetAgentByIdAsync(TestData.AgentId)).ReturnsAsync(TestData.CreateAgent());
+        AddAgentToListingCaseDto dto = new AddAgentToListingCaseDto { Id = TestData.AgentId };
+
+        //Act
+        BadRequestException exception = await Assert.ThrowsAsync<BadRequestException>(
+            () => _listingCaseService.AddAgentToListingCaseAsync(dto, TestData.OwnerId, 1, TestData.IpAddress, TestData.OwnerEmail));
+
+        //Assert
+        exception.Message.Should().Be("This agent has already been assigned to this listing case.");
+        listingCase.Agents.Should().HaveCount(1);
+        VerifyNothingSavedOrLogged();
+    }
+
+    [Fact]
+    public async Task AddAgentToListingCaseAsync_WhenAgentIsNotInCompany_ThrowsBadRequest()
+    {
+        //Arrange
+        ListingCase listingCase = TestData.CreateListingCase();
+        Agent agentFromAnotherCompany = TestData.CreateAgent(companyId: "another-company");
+        _mockListingCaseRepository.Setup(m => m.GetListingCaseWithAgentAsync(1)).ReturnsAsync(listingCase);
+        _mockAgentRepository.Setup(m => m.GetAgentByIdAsync(TestData.AgentId)).ReturnsAsync(agentFromAnotherCompany);
+        AddAgentToListingCaseDto dto = new AddAgentToListingCaseDto { Id = TestData.AgentId };
+
+        //Act
+        BadRequestException exception = await Assert.ThrowsAsync<BadRequestException>(
+            () => _listingCaseService.AddAgentToListingCaseAsync(dto, TestData.OwnerId, 1, TestData.IpAddress, TestData.OwnerEmail));
+
+        //Assert
+        exception.Message.Should().Be("This agent is not in your company.");
+        listingCase.Agents.Should().BeEmpty();
         VerifyNothingSavedOrLogged();
     }
 }
