@@ -12,6 +12,7 @@ using Remp.Service.Interfaces;
 using Remp.Service.Services;
 using Remp.Tests.TestHelpers;
 using Remp.Service.Validators;
+using Remp.Common.Exceptions;
 
 namespace Remp.Tests;
 
@@ -110,5 +111,47 @@ public class ListingCaseServiceTests
         _mockActivityLog.Verify(m => m.LogListingCaseAsync(
             It.IsAny<ListingCaseActivityType>(), It.IsAny<int>(), It.IsAny<string?>(),
             It.IsAny<bool>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
+    }
+
+        // ---------- External storage mock (IBlobStorageService) ----------
+
+    [Fact]
+    public async Task GetListingCaseDetailsByIdAsync_WhenOwnerRequests_ReturnsReadUrlsFromBlobStorage()
+    {
+        //Arrange
+        ListingCase listingCase = TestData.CreateListingCase();
+        TestData.AddMediaAsset(listingCase, 1);
+        TestData.AddMediaAsset(listingCase, 2);
+        _mockListingCaseRepository
+            .Setup(m => m.GetListingCaseDetailsByIdAsync(1))
+            .ReturnsAsync(listingCase);
+
+        //Act
+        GetListingCaseDetailsResponseDto result =
+            await _listingCaseService.GetListingCaseDetailsByIdAsync(1, TestData.OwnerId);
+
+        //Assert
+        result.MediaAssets.Should().HaveCount(2);
+        result.MediaAssets.Select(m => m.MediaUrl).Should().BeEquivalentTo(
+            "https://fake-storage/listing-cases/1/media-1.jpg?sas=test",
+            "https://fake-storage/listing-cases/1/media-2.jpg?sas=test");
+        _mockBlobStorage.Verify(m => m.GetReadUrl(It.IsAny<string>()), Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task GetListingCaseDetailsByIdAsync_WhenUserIsNeitherOwnerNorAgent_ThrowsForbidden()
+    {
+        //Arrange
+        ListingCase listingCase = TestData.AssignAgent(TestData.CreateListingCase());
+        TestData.AddMediaAsset(listingCase, 1);
+        _mockListingCaseRepository
+            .Setup(m => m.GetListingCaseDetailsByIdAsync(1))
+            .ReturnsAsync(listingCase);
+
+        //Act & Assert
+        await Assert.ThrowsAsync<ForbiddenException>(
+            () => _listingCaseService.GetListingCaseDetailsByIdAsync(1, TestData.OtherUserId));
+
+        _mockBlobStorage.Verify(m => m.GetReadUrl(It.IsAny<string>()), Times.Never);
     }
 }
