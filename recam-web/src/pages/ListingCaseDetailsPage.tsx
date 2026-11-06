@@ -63,7 +63,7 @@ const ListingCaseDetailsPage = () => {
 
     return (
         <div className="max-w-4xl flex flex-col gap-6">
-            <Link to="/" className="text-sm text-blue-600 hover:underline">
+            <Link to="/listing-cases" className="text-sm text-blue-600 hover:underline">
                 ← Back to listing cases
             </Link>
 

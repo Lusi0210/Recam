@@ -311,7 +311,7 @@ namespace Remp.API.Controllers
         }
 
         [HttpPost("{id:int}/publish")]
-        [Authorize(Roles = RoleNames.PhotographyCompany)]
+        [Authorize(Roles = $"{RoleNames.PhotographyCompany},{RoleNames.Agent}")]
         [ProducesResponseType(typeof(ApiResponse<PublishListingCaseResponseDto>),StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]

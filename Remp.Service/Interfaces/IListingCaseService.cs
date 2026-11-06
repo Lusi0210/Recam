@@ -14,4 +14,5 @@ public interface IListingCaseService
     Task<UpdateListingCaseStatusResponseDto> UpdateListingCaseStatusByIdAsync(UpdateListingCaseStatusDto dto,int id,string userId,string? ipAddress);
     Task<AddAgentToListingCaseResponseDto> AddAgentToListingCaseAsync(AddAgentToListingCaseDto dto,string userId,int id,string? ipAddress,string email);
     Task<PublishListingCaseResponseDto> PublishListingCaseAsync(int id, string userId, string? ipAddress);
+    Task<GetListingCaseByURLResponseDto> GetListingCaseByTokenAsync(string url);
 }

@@ -318,6 +318,33 @@ public class ListingCaseService : IListingCaseService
         };
     }
 
+    public async Task<GetListingCaseByURLResponseDto> GetListingCaseByTokenAsync(string token)
+    {
+        string baseUrl = _frontendSettings.BaseUrl.TrimEnd('/');
+        string shareableUrl = $"{baseUrl}/share/{token}";
+
+        ListingCase? listingCase = await _listingCaseRepository.GetListingCaseByShareableUrlAsync(shareableUrl);
+        if (listingCase == null)
+        {
+            throw new NotFoundException("The shared listing case does not exist!");
+        }
+
+        GetListingCaseByURLResponseDto result = _mapper.Map<GetListingCaseByURLResponseDto>(listingCase);
+
+        foreach (SharedMediaAssetDto media in result.MediaAssets)
+        {
+            media.MediaUrl = _blobStorageService.GetReadUrl(media.MediaUrl);
+        }
+
+        result.MediaAssets = result.MediaAssets
+            .OrderByDescending(m => m.IsHero)
+            .ThenBy(m => m.MediaType)
+            .ToList();
+
+        return result;
+
+    }
+
 
 
 }

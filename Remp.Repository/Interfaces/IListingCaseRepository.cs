@@ -18,4 +18,5 @@ public interface IListingCaseRepository
     Task<ListingCase?> GetListingCaseWithMediaAndAgentsAsync(int id);
     Task<Dictionary<ListcaseStatus, int>> GetStatusCountsAsync(string userId, string role);
     Task<Dictionary<int, string>> GetTitlesAsync(string userId, string role);
+    Task<ListingCase?> GetListingCaseByShareableUrlAsync(string url);
 }

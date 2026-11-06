@@ -29,5 +29,7 @@ public class MappingProfile : Profile
         CreateMap<AddCaseContactDto,CaseContact>();
         CreateMap<MediaAsset,GetFInalSelectionResponseDto>();
         CreateMap<ListingCaseQueryDto, ListingCaseFilter>();
+        CreateMap<MediaAsset, SharedMediaAssetDto>();
+        CreateMap<ListingCase, GetListingCaseByURLResponseDto>();
     }
 }

@@ -208,4 +208,12 @@ public class ListingCaseRepository : IListingCaseRepository
             .AsSplitQuery()
             .FirstOrDefaultAsync(l => l.Id == id && !l.IsDeleted);
     }
+
+    public async Task<ListingCase?> GetListingCaseByShareableUrlAsync(string url)
+    {
+        return await _dbContext.ListingCases
+            .AsNoTracking()
+            .Include(l => l.MediaAssets.Where(m => !m.IsDeleted && (m.IsSelected || m.MediaType != MediaType.Photos)))
+            .FirstOrDefaultAsync(l => l.ShareableUrl == url && !l.IsDeleted);
+    }
 }
